@@ -14,7 +14,7 @@ import {
 } from "casper-js-sdk";
 import fs from "fs";
 import { join } from "path";
-import { PUBLIC_KEY, PRIVATE_KEY } from "../../config";
+import { PUBLIC_KEY, PRIVATE_KEY, CASPERNET_PROVIDER_URL } from "../../config";
 
 const config = {
   network_name: "casper-test",
@@ -68,7 +68,7 @@ export const swapTokensForCspr = async () => {
 
   const signedDeeploy = DeployUtil.signDeploy(deploy, faucetKey);
 
-  const client = new CasperServiceByJsonRPC("http://85.114.132.133:7777/rpc");
+  const client = new CasperServiceByJsonRPC(CASPERNET_PROVIDER_URL);
 
   console.log(`######## Sending deploy ... ${signedDeeploy}`);
   console.log({ ...signedDeeploy });
@@ -120,11 +120,12 @@ export const swapCsprForTokens = async () => {
   const deployParams = new DeployUtil.DeployParams(senderPublicKey, config.network_name);
 
   const deployCost = DeployUtil.standardPayment(35000000000);
+
   const deploy = DeployUtil.makeDeploy(deployParams, deployItem1, deployCost);
 
   const signedDeeploy = DeployUtil.signDeploy(deploy, faucetKey);
 
-  const client = new CasperServiceByJsonRPC("http://85.114.132.133:7777/rpc");
+  const client = new CasperServiceByJsonRPC(CASPERNET_PROVIDER_URL);
 
   console.log(`######## Sending deploy ... ${signedDeeploy}`);
   console.log({ ...signedDeeploy });

@@ -29,7 +29,57 @@ const config = {
 const faucetKey = Keys.getKeysFromHexPrivKey(PRIVATE_KEY, Keys.SignatureAlgorithm.Ed25519);
 const MAIN_PURSE = "uref-04edf1af554b36e7d734cca4181c70038ec979d70c56b96771520d82de1b8a6e-007";
 
-export const swapTokensForCspr = async () => {
+export const swapTokensForExactCspr = async () => {
+  const senderPublicKey = CLPublicKey.fromHex(PUBLIC_KEY);
+  const entryPoint = "swap_tokens_for_exact_cspr";
+  const response = {
+    message: "",
+    path: [
+      "hash-0885c63f5f25ec5b6f3b57338fae5849aea5f1a2c96fc61411f2bfc5e432de5a",
+      "hash-28eed3da2b123334c7913d84c4aea0ed426fd268d29410cb12c6bc8a453183f6",
+    ],
+    pathwithcontractHash: [
+      "hash-0885c63f5f25ec5b6f3b57338fae5849aea5f1a2c96fc61411f2bfc5e432de5a",
+      "hash-28eed3da2b123334c7913d84c4aea0ed426fd268d29410cb12c6bc8a453183f6",
+    ],
+    success: true,
+  };
+  const path = response.pathwithcontractHash.map((x) => new CLString(x));
+
+  const args = RuntimeArgs.fromMap({
+    amount_out: CLValueBuilder.u256(2500000000),
+    amount_in_max: CLValueBuilder.u256(10012),
+    path: new CLList(path),
+    to: CLValueBuilder.uref(Uint8Array.from(Buffer.from(MAIN_PURSE.slice(5, 69), "hex")), AccessRights.READ_ADD_WRITE),
+    deadline: CLValueBuilder.u256(1739598100811),
+
+    // Deploy wasm params
+    entrypoint: CLValueBuilder.string(entryPoint),
+    package_hash: new CLKey(new CLByteArray(Uint8Array.from(Buffer.from(config.router_package_hash, "hex")))),
+  });
+
+  const contractHashAsByteArray = Uint8Array.from(Buffer.from(config.auction_manager_contract_hash, "hex"));
+  const deployItem = DeployUtil.ExecutableDeployItem.newStoredContractByHash(contractHashAsByteArray, entryPoint, args);
+
+  const deployParams = new DeployUtil.DeployParams(senderPublicKey, config.network_name);
+
+  const deployCost = DeployUtil.standardPayment(35000000000);
+  const deploy = DeployUtil.makeDeploy(deployParams, deployItem, deployCost);
+
+  const signedDeeploy = DeployUtil.signDeploy(deploy, faucetKey);
+
+  const client = new CasperServiceByJsonRPC(CASPERNET_PROVIDER_URL);
+
+  console.log(`######## Sending deploy ... ${signedDeeploy}`);
+  console.log({ ...signedDeeploy });
+  const { deploy_hash } = await client.deploy(signedDeeploy);
+  console.log(`######## Deploy Hash ${deploy_hash}`);
+  const result = await client.waitForDeploy(deploy);
+
+  console.log(`######### all good `, result.deploy.hash);
+};
+
+export const swapExactTokensForCspr = async () => {
   const senderPublicKey = CLPublicKey.fromHex(PUBLIC_KEY);
   const entryPoint = "swap_exact_tokens_for_cspr";
   const response = {
@@ -79,7 +129,7 @@ export const swapTokensForCspr = async () => {
   console.log(`######### all good `, result.deploy.hash);
 };
 
-export const swapCsprForTokens = async () => {
+export const swapExactCsprForTokens = async () => {
   const senderPublicKey = CLPublicKey.fromHex(PUBLIC_KEY);
   const entryPoint = "swap_exact_cspr_for_tokens";
   const response = {
@@ -127,6 +177,52 @@ export const swapCsprForTokens = async () => {
 
   const client = new CasperServiceByJsonRPC(CASPERNET_PROVIDER_URL);
 
+  console.log(`######## Sending deploy ... ${signedDeeploy}`);
+  console.log({ ...signedDeeploy });
+  const { deploy_hash } = await client.deploy(signedDeeploy);
+  console.log(`######## Deploy Hash ${deploy_hash}`);
+  const result = await client.waitForDeploy(deploy, 100000);
+
+  console.log(`######### all good `, result.deploy.hash);
+};
+
+export const swapExactTokensForTokens = async () => {
+  const senderPublicKey = CLPublicKey.fromHex(PUBLIC_KEY);
+  const entryPoint = "swap_exact_tokens_for_tokens";
+  const response = {
+    message: "",
+    path: [
+      "hash-28eed3da2b123334c7913d84c4aea0ed426fd268d29410cb12c6bc8a453183f6", // WETH
+      "hash-4a2e5b5169b756d571e5014baf9bb76deb5b780509e8db17fb80ed6251204deb", // CSX
+    ],
+    pathwithcontractHash: [
+      "hash-28eed3da2b123334c7913d84c4aea0ed426fd268d29410cb12c6bc8a453183f6", // WETH
+      "hash-4a2e5b5169b756d571e5014baf9bb76deb5b780509e8db17fb80ed6251204deb", // CSX
+    ],
+    success: true,
+  };
+  const path = response.pathwithcontractHash.map((x) => new CLString(x));
+
+  const args = RuntimeArgs.fromMap({
+    amount_in: CLValueBuilder.u256(10012),
+    amount_out_min: CLValueBuilder.u256(2500000000),
+    path: new CLList(path),
+    to: new CLKey(new CLAccountHash((senderPublicKey as CLPublicKey).toAccountHash())),
+    deadline: CLValueBuilder.u256(1739598100811),
+
+    // Deploy wasm params
+    entrypoint: CLValueBuilder.string(entryPoint),
+    package_hash: new CLKey(new CLByteArray(Uint8Array.from(Buffer.from(config.router_package_hash, "hex")))),
+  });
+  const contractHashAsByteArray = Uint8Array.from(Buffer.from(config.auction_manager_contract_hash, "hex"));
+  // Create the deploy item using contractHash + entryPoint + args
+  const deployItem = DeployUtil.ExecutableDeployItem.newStoredContractByHash(contractHashAsByteArray, entryPoint, args);
+  const deployCost = DeployUtil.standardPayment(35000000000);
+  const deployParams = new DeployUtil.DeployParams(senderPublicKey, config.network_name);
+
+  const deploy = DeployUtil.makeDeploy(deployParams, deployItem, deployCost);
+  const signedDeeploy = DeployUtil.signDeploy(deploy, faucetKey);
+  const client = new CasperServiceByJsonRPC(CASPERNET_PROVIDER_URL);
   console.log(`######## Sending deploy ... ${signedDeeploy}`);
   console.log({ ...signedDeeploy });
   const { deploy_hash } = await client.deploy(signedDeeploy);

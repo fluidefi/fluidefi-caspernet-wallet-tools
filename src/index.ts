@@ -7,6 +7,7 @@ import cookies from "cookie-parser";
 import { AccessControlAllowOrigin, PORT } from "./config";
 import { errorMiddleware } from "./middlewares";
 import { addLiquidityRouter, removeLiquidityRouter, swapRouter } from "./routes";
+import "reflect-metadata";
 
 const app = express();
 app.use(express.json());

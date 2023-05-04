@@ -15,19 +15,73 @@ import {
 import fs from "fs";
 import { join } from "path";
 import { PUBLIC_KEY, PRIVATE_KEY, CASPERNET_PROVIDER_URL } from "../../config";
+import { PathResponse, SwapEntryPoint, SwapPrams } from "./types";
+import { getPath } from "../../utils";
 
 const config = {
   network_name: "casper-test",
   auction_manager_contract_hash: "f00895f7a4ed30e9a5f8171b6fec0a697b6126eb3eafb8b312915a1cec7b2d08",
-  delegate_cost: "2500000000", // in motes
-  undelegate_cost: "10000", // in motes
-  redelegate_cost: "10000", // in motes
   transfer_cost: "100000000", // in motes
   router_package_hash: "b6c26649540c59decbc53274a67336d0588f6ad2ae0863a8a636dddcc75689f0",
 };
 
 const faucetKey = Keys.getKeysFromHexPrivKey(PRIVATE_KEY, Keys.SignatureAlgorithm.Ed25519);
 const MAIN_PURSE = "uref-04edf1af554b36e7d734cca4181c70038ec979d70c56b96771520d82de1b8a6e-007";
+
+/**
+ * Determine which swap endpoint should be used
+ *
+ * @param tokenASymbol tokenA symbol
+ * @param tokenBSymbol tokenB symbol
+ *
+ * @returns which swap endpoint should be used
+ */
+export const selectSwapEntryPoint = (tokenASymbol: string, tokenBSymbol: string): SwapEntryPoint => {
+  if (tokenASymbol === "CSPR" && tokenBSymbol !== "CSPR") {
+    return SwapEntryPoint.SWAP_EXACT_CSPR_FOR_TOKENS;
+  } else if (tokenASymbol !== "CSPR" && tokenBSymbol === "CSPR") {
+    return SwapEntryPoint.SWAP_EXACT_TOKENS_FOR_CSPR;
+  } else if (tokenASymbol !== "CSPR" && tokenBSymbol !== "CSPR") {
+    return SwapEntryPoint.SWAP_EXACT_TOKENS_FOR_TOKENS;
+  }
+};
+
+/**
+ * Get the liquidity pair path for swapping
+ * @param tokenASymbol first token
+ * @param tokenBSymbol second token
+ *
+ * @returns the path for swapping
+ */
+const getPathForSwap = async (tokenASymbol: string, tokenBSymbol: string): Promise<PathResponse> => {
+  const token0 = tokenASymbol === "CSPR" ? "WCSPR" : tokenASymbol;
+  const token1 = tokenBSymbol === "CSPR" ? "WCSPR" : tokenBSymbol;
+
+  /**
+   * In Progress here
+   * TODO: Retrieve Tokens and Pairs from DB and pass them to the getPath method instead of the current empty arrays
+   */
+
+  const path = getPath(token0, token1, [], []);
+
+  const path2 = [""]; // path.map(x => initialTokenState.tokens[x.id].packageHash);
+
+  return {
+    message: "",
+    path: path2,
+    pathwithcontractHash: path2,
+    success: true,
+  };
+};
+
+export const swap = async (params: SwapPrams): Promise<void> => {
+  const entryPoint = selectSwapEntryPoint(params.tokenA, params.tokenB);
+  const response = await getPathForSwap(params.tokenA, params.tokenB);
+  const path = response.pathwithcontractHash.map((x) => new CLString(x));
+
+};
+
+
 
 export const swapTokensForExactCspr = async () => {
   const senderPublicKey = CLPublicKey.fromHex(PUBLIC_KEY);

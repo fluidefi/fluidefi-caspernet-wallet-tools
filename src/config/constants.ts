@@ -7,7 +7,7 @@ export const CASPERNET_PROVIDER_URL: string = process.env.CASPERNET_PROVIDER_URL
 export const PRIVATE_KEY: string = process.env.PRIVATE_KEY || "";
 export const PUBLIC_KEY: string = process.env.PUBLIC_KEY || "";
 
-export const DB: IDBCreds = {
+export const DBCreds: IDBCreds = {
   host: process.env.PHZ_FLDF_READ_DB_CONNECTION_HOST || "localhost",
   dbName: process.env.PHZ_FLDF_READ_DB_CONNECTION_DATABASE || "postgres",
   username: process.env.PHZ_FLDF_READ_DB_CONNECTION_USERNAME || "postgres",

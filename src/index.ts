@@ -8,6 +8,11 @@ import { AccessControlAllowOrigin, PORT } from "./config";
 import { errorMiddleware } from "./middlewares";
 import { addLiquidityRouter, removeLiquidityRouter, swapRouter } from "./routes";
 import "reflect-metadata";
+import { initDb } from "./db";
+
+(async () => {
+  await initDb();
+})();
 
 const app = express();
 app.use(express.json());

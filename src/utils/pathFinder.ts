@@ -1,4 +1,4 @@
-import { PairData, Token } from "./types";
+import { LiquidityPool as PairData, Token } from "../entities";
 
 /**
  * A unique identifier for the
@@ -129,7 +129,7 @@ export class DijkstraCalculator {
     const distances: { [key: NodeId]: number } = {};
     const previous: { [key: NodeId]: PathItem } = {};
     const path: PathItem[] = []; //to return at end
-    let smallest: PathItem; // | null = null;
+    let smallest: PathItem | null = null;
     //build up initial state
     for (const vertex in this.adjacencyList) {
       if (vertex === start) {
@@ -228,12 +228,12 @@ export const getPath = (
   const graph = new DijkstraCalculator();
 
   // Add every token as a vertex
-  tokenList.forEach((v) => {
-    graph.addVertex(v.symbol);
+  tokenList.forEach((v: Token) => {
+    graph.addVertex(v.tokenSymbol);
   });
 
   // Add every pair as a edge
-  pairList.forEach((v) => {
+  pairList.forEach((v: PairData) => {
     graph.addEdge(v.token0Symbol, v.token1Symbol, 1, v);
   });
 

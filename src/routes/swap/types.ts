@@ -9,14 +9,14 @@ export interface SwapPrams {
   mode: SwapMode;
   tokenA: string;
   tokenB: string;
-  amount_in: number;
-  amount_out: number;
-  recipient: string;
-  deadline: number;
-  slippage: number;
-  gasPrice: number;
-  network: string;
-  plateform: string;
+  amount_in?: number;
+  amount_out?: number;
+  recipient?: string;
+  deadline?: number;
+  slippage?: number;
+  gasPrice?: number;
+  network?: string;
+  plateform?: string;
 }
 
 // swap entry point

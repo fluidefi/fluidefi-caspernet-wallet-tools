@@ -17,6 +17,8 @@ import { join } from "path";
 import { PUBLIC_KEY, PRIVATE_KEY, CASPERNET_PROVIDER_URL } from "../../config";
 import { PathResponse, SwapEntryPoint, SwapPrams } from "./types";
 import { getPath } from "../../utils";
+import { AppDataSource } from "../../db";
+import { LiquidityPool, Token } from "../../entities";
 
 const config = {
   network_name: "casper-test",
@@ -57,14 +59,13 @@ const getPathForSwap = async (tokenASymbol: string, tokenBSymbol: string): Promi
   const token0 = tokenASymbol === "CSPR" ? "WCSPR" : tokenASymbol;
   const token1 = tokenBSymbol === "CSPR" ? "WCSPR" : tokenBSymbol;
 
-  /**
-   * In Progress here
-   * TODO: Retrieve Tokens and Pairs from DB and pass them to the getPath method instead of the current empty arrays
-   */
+  const dbInstance = AppDataSource.getInstance();
+  const tokens = await dbInstance.manager.find(Token);
+  const pairs = await dbInstance.manager.find(LiquidityPool);
 
-  const path = getPath(token0, token1, [], []);
+  const path = getPath(token0, token1, tokens, pairs);
 
-  const path2 = [""]; // path.map(x => initialTokenState.tokens[x.id].packageHash);
+  const path2 = path.map((x) => (tokens.find((token) => token.tokenSymbol == x.id) as Token).tokenAddress);
 
   return {
     message: "",
@@ -76,12 +77,28 @@ const getPathForSwap = async (tokenASymbol: string, tokenBSymbol: string): Promi
 
 export const swap = async (params: SwapPrams): Promise<void> => {
   const entryPoint = selectSwapEntryPoint(params.tokenA, params.tokenB);
-  const response = await getPathForSwap(params.tokenA, params.tokenB);
-  const path = response.pathwithcontractHash.map((x) => new CLString(x));
 
+  const shortPath = await getPathForSwap(params.tokenA, params.tokenB);
+  if (!shortPath.success || shortPath.pathwithcontractHash.length == 0) {
+    console.log(`No path could be found for your swap`);
+    return;
+  }
+  const path = shortPath.pathwithcontractHash.map((x) => new CLString(x));
+  switch (entryPoint) {
+    case SwapEntryPoint.SWAP_EXACT_CSPR_FOR_TOKENS:
+      console.log(entryPoint);
+      break;
+    case SwapEntryPoint.SWAP_EXACT_TOKENS_FOR_CSPR:
+      console.log(entryPoint);
+      break;
+    case SwapEntryPoint.SWAP_TOKENS_FOR_EXACT_CSPR:
+      console.log(entryPoint);
+      break;
+    case SwapEntryPoint.SWAP_EXACT_TOKENS_FOR_TOKENS:
+      console.log(entryPoint);
+      break;
+  }
 };
-
-
 
 export const swapTokensForExactCspr = async () => {
   const senderPublicKey = CLPublicKey.fromHex(PUBLIC_KEY);

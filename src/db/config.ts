@@ -1,18 +1,35 @@
-// INPROGRESS
-/*
-import { createConecction } from "typeorm";
+import { PostgresConnectionOptions } from "typeorm/driver/postgres/PostgresConnectionOptions";
+import { LiquidityPool, Token } from "../entities";
+import { DBCreds } from "../config";
+import { DataSource } from "typeorm";
 
-export const connect = async () => {
-  const connection = await createConnection({
-    type: "postgres",
-    host: process.env.DB_HOST,
-    port: parseInt(process.env.DB_PORT),
-    database: process.env.DB_NAME,
-    username: process.env.DB_USERNAME,
-    password: process.env.DB_PASSWORD,
-    entities: [User], // Add your entity classes here
-    synchronize: true, // Automatically create database schema
-  });
+export const DataSourceOptions: PostgresConnectionOptions = {
+  type: "postgres",
+  host: DBCreds.host,
+  port: DBCreds.port,
+  username: DBCreds.username,
+  password: DBCreds.password,
+  database: DBCreds.dbName,
+  synchronize: false,
+  logging: false,
+  entities: [LiquidityPool, Token],
+  migrations: [],
+  subscribers: [],
+  extra: { max: 30 },
+};
 
-  return connection;
-}*/
+export class AppDataSource {
+  private static instance: DataSource;
+
+  public static getInstance() {
+    if (!this.instance) {
+      this.instance = new DataSource(DataSourceOptions);
+    }
+    return this.instance;
+  }
+}
+
+export const initDb = () => {
+  const dsInstance = AppDataSource.getInstance();
+  return dsInstance.initialize();
+};

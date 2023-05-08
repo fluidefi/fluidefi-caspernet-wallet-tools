@@ -9,6 +9,7 @@ export const postSwapValidator = (swapParams: any): string | null => {
   );
   const hasAmountInOrOut = "amount_in" in swapParams || "amount_out" in swapParams;
   if (!hasRequiredProperties || !hasAmountInOrOut) {
+    // will be refactored
     return "error";
   }
 

@@ -68,7 +68,7 @@ const getPathForSwap = async (tokenASymbol: string, tokenBSymbol: string): Promi
 
   const path = getPath(token0, token1, tokens, pairs);
 
-  const path2 = path.map((x) => (tokens.find((token) => token.tokenSymbol == x.id) as Token).tokenAddress);
+  const path2 = path.map((x) => "hash-" + (tokens.find((token) => token.tokenSymbol == x.id) as Token).tokenAddress);
 
   return {
     message: "",
@@ -149,7 +149,7 @@ const swapExactCsprForTokens = async (
     amount_in: CLValueBuilder.u256(params.amount_in || 1),
     amount_out_min: CLValueBuilder.u256(params.amount_out || 1),
     path: new CLList(path),
-    to: CLValueBuilder.uref(Uint8Array.from(Buffer.from(MAIN_PURSE.slice(5, 69), "hex")), AccessRights.READ_ADD_WRITE),
+    to: new CLKey(new CLAccountHash((senderPublicKey as CLPublicKey).toAccountHash())),
     deadline: CLValueBuilder.u256(params.deadline || 1),
 
     // Deploy wasm params
@@ -234,6 +234,7 @@ export const swap = async (params: SwapPrams): Promise<any> => {
       [deployHash, deployResult] = await swapExactTokensForTokens(params, path, client, casperService, senderPublicKey);
       break;
   }
+
   if (deployResult.execution_results[0].result.Success) {
     console.log(`Deploy succeed ${deployHash}`);
   } else {

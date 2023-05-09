@@ -1,6 +1,15 @@
 import { SwapPrams } from "./types";
 
-const PostSwapRequiredParams: Array<keyof SwapPrams> = ["mode", "tokenA", "tokenB"];
+const PostSwapRequiredParams: Array<keyof SwapPrams> = [
+  "mode",
+  "tokenA",
+  "tokenB",
+  "amount_in",
+  "amount_out",
+  "deadline",
+  "gasPrice",
+  "slippage",
+];
 
 export const postSwapValidator = (swapParams: any): string | null => {
   // Check if 'mode' and either 'amount_in' or 'amount_out' are present in the request body

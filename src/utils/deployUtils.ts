@@ -102,8 +102,6 @@ export const putAndConfirmDeploy = async (
   try {
     const { deploy_hash: deployHash } = await casperService.deploy(signedDeploy);
 
-    console.log("deployHash", deployHash);
-
     const [_, deployResult] = await getDeploy(client, deployHash);
 
     return [deployHash, deployResult];
@@ -139,4 +137,39 @@ export const getDeploy = async (
     // rethrow error
     throw err;
   }
+};
+
+/**
+ * Async attempt to retrieve deploy but wits until the deploy execution is completed
+ *
+ * @param deployHash string deploy hash
+ * @param ticks number of times before giving up
+ *
+ * @returns the an array with deploy and deploy result or throw error
+ */
+export const waitForDeployExecution = async (
+  casperClient: CasperClient,
+  deployHash: string,
+  ticks = 1000,
+): Promise<[DeployUtil.Deploy, GetDeployResult]> => {
+  let i = 0;
+  while (i !== ticks) {
+    try {
+      const [deploy, raw] = await casperClient.getDeploy(deployHash);
+      if (raw.execution_results.length !== 0) {
+        if (raw.execution_results[0].result.Success) {
+          return [deploy, raw];
+        } else {
+          throw Error("Contract execution: " + raw.execution_results[0].result.Failure?.error_message);
+        }
+      } else {
+        i++;
+        await sleep(1000);
+      }
+    } catch (e) {
+      i++;
+      await sleep(1000);
+    }
+  }
+  throw Error("Timeout after " + i + "s. Something's wrong");
 };

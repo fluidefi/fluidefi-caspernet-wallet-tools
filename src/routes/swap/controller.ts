@@ -5,8 +5,6 @@ import { postSwapValidator } from "./validator";
 import { sendBadRequestResponse } from "../../utils";
 
 export const swapToknes = async (req: Request, res: Response) => {
-  //await swapExactTokensForCspr();
-  //await swapTokensForExactCspr();
   const swapParams = req.body as SwapPrams;
   const errors = postSwapValidator(swapParams);
   if (errors) {

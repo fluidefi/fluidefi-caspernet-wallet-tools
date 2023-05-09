@@ -8,7 +8,6 @@ import {
   CLString,
   CLValueBuilder,
   CasperServiceByJsonRPC,
-  DeployUtil,
   Keys,
   RuntimeArgs,
   CasperClient,

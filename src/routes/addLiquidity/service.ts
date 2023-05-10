@@ -18,8 +18,6 @@ import { Token } from "../../entities";
 import BigNumber from "bignumber.js";
 import { Some } from "ts-results";
 import { signAndDeployContractCall, signAndDeployWasm } from "../../utils";
-import { readFileSync } from "fs";
-import { join } from "path";
 import { signAndDeployAllowance } from "../../utils/allowance";
 
 const config = {
@@ -114,7 +112,6 @@ export const AddLiquidityService = async (params: AddLiquidityParams): Promise<a
         casperService,
         senderPublicKey,
         faucetKey,
-        new Uint8Array(readFileSync(join(__dirname, "session-code-router.wasm"))),
         args,
         new BigNumber(params.gasPrice || 3),
         params.network || "capser-test",

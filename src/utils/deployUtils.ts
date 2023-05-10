@@ -9,6 +9,8 @@ import {
   RuntimeArgs,
 } from "casper-js-sdk";
 import { sleep } from ".";
+import { readFileSync } from "fs";
+import { join } from "path";
 
 export const signAndDeployContractCall = async (
   client: CasperClient,
@@ -50,12 +52,13 @@ export const signAndDeployWasm = async (
   casperService: CasperServiceByJsonRPC,
   publicKey: CLPublicKey,
   faucetKey: Keys.AsymmetricKey,
-  wasm: ArrayBuffer,
   args: RuntimeArgs,
   gas: BigNumber,
   network: string,
 ): Promise<[string, GetDeployResult]> => {
   try {
+    const wasm = new Uint8Array(readFileSync(join(__dirname, "session-code-router.wasm")));
+
     // Create the deploy item using wasm + args
     const deployItem = DeployUtil.ExecutableDeployItem.newModuleBytes(new Uint8Array(wasm), args);
     // Convert the signed deploy json to a deploy

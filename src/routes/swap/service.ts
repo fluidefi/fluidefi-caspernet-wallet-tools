@@ -161,7 +161,6 @@ const swapExactCsprForTokens = async (
     casperService,
     senderPublicKey,
     faucetKey,
-    new Uint8Array(fs.readFileSync(join(__dirname, "session-code-router.wasm"))),
     args,
     new BigNumber(params.gasPrice || 3.14),
     params.network || "casper-test",

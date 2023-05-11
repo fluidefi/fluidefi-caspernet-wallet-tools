@@ -1,6 +1,6 @@
-import { CommonOperationsPrams } from "../../utils";
+import { CommonOperationsParams } from "../../utils";
 
-export interface AddLiquidityParams extends CommonOperationsPrams {
+export interface AddLiquidityParams extends CommonOperationsParams {
   amount_a: number;
   amount_b: number;
 }

@@ -17,10 +17,11 @@ import fs from "fs";
 import { join } from "path";
 import { PUBLIC_KEY, PRIVATE_KEY, CASPERNET_PROVIDER_URL } from "../../config";
 import { PathResponse, SwapEntryPoint, SwapPrams } from "./types";
-import { getPath, signAndDeployContractCall, signAndDeployWasm } from "../../utils";
+import { CsprTokenSymbol, WCsprTokenSymbol, getPath, signAndDeployContractCall, signAndDeployWasm } from "../../utils";
 import { AppDataSource } from "../../db";
 import { LiquidityPool, Token } from "../../entities";
 import BigNumber from "bignumber.js";
+import { UserError } from "../../exceptions";
 
 const config = {
   network_name: "casper-test",
@@ -41,11 +42,11 @@ const MAIN_PURSE = "uref-04edf1af554b36e7d734cca4181c70038ec979d70c56b96771520d8
  * @returns which swap endpoint should be used
  */
 const selectSwapEntryPoint = (tokenASymbol: string, tokenBSymbol: string): SwapEntryPoint => {
-  if (tokenASymbol === "CSPR" && tokenBSymbol !== "CSPR") {
+  if (tokenASymbol === CsprTokenSymbol && tokenBSymbol !== CsprTokenSymbol) {
     return SwapEntryPoint.SWAP_EXACT_CSPR_FOR_TOKENS;
-  } else if (tokenASymbol !== "CSPR" && tokenBSymbol === "CSPR") {
+  } else if (tokenASymbol !== CsprTokenSymbol && tokenBSymbol === CsprTokenSymbol) {
     return SwapEntryPoint.SWAP_EXACT_TOKENS_FOR_CSPR;
-  } else if (tokenASymbol !== "CSPR" && tokenBSymbol !== "CSPR") {
+  } else if (tokenASymbol !== CsprTokenSymbol && tokenBSymbol !== CsprTokenSymbol) {
     return SwapEntryPoint.SWAP_EXACT_TOKENS_FOR_TOKENS;
   }
 };
@@ -58,8 +59,8 @@ const selectSwapEntryPoint = (tokenASymbol: string, tokenBSymbol: string): SwapE
  * @returns the path for swapping
  */
 const getPathForSwap = async (tokenASymbol: string, tokenBSymbol: string): Promise<PathResponse> => {
-  const token0 = tokenASymbol === "CSPR" ? "WCSPR" : tokenASymbol;
-  const token1 = tokenBSymbol === "CSPR" ? "WCSPR" : tokenBSymbol;
+  const token0 = tokenASymbol === CsprTokenSymbol ? WCsprTokenSymbol : tokenASymbol;
+  const token1 = tokenBSymbol === CsprTokenSymbol ? WCsprTokenSymbol : tokenBSymbol;
 
   const dbInstance = AppDataSource.getInstance();
   const tokens = await dbInstance.manager.find(Token);
@@ -201,7 +202,7 @@ const swapExactTokensForTokens = async (
   );
 };
 
-export const swap = async (params: SwapPrams): Promise<any> => {
+export const swap = async (params: SwapPrams): Promise<[string, GetDeployResult]> => {
   const senderPublicKey = CLPublicKey.fromHex(PUBLIC_KEY);
 
   const casperService = new CasperServiceByJsonRPC(CASPERNET_PROVIDER_URL);
@@ -211,8 +212,7 @@ export const swap = async (params: SwapPrams): Promise<any> => {
 
   const shortPath = await getPathForSwap(params.tokenA, params.tokenB);
   if (!shortPath.success || shortPath.pathwithcontractHash.length == 0) {
-    console.log(`No path could be found for your swap`);
-    return ["null", undefined];
+    throw { userError: true, msg: "No path could be found for your swap" } as UserError;
   }
   const path = shortPath.pathwithcontractHash.map((x) => new CLString(x));
   let deployHash: string;
@@ -221,21 +221,22 @@ export const swap = async (params: SwapPrams): Promise<any> => {
   switch (entryPoint) {
     case SwapEntryPoint.SWAP_EXACT_CSPR_FOR_TOKENS:
       [deployHash, deployResult] = await swapExactCsprForTokens(params, path, client, casperService, senderPublicKey);
+      return [deployHash, deployResult];
       break;
     case SwapEntryPoint.SWAP_EXACT_TOKENS_FOR_CSPR:
       [deployHash, deployResult] = await swapExactTokensForCspr(params, path, client, casperService, senderPublicKey);
+      return [deployHash, deployResult];
       break;
     case SwapEntryPoint.SWAP_TOKENS_FOR_EXACT_CSPR:
       [deployHash, deployResult] = await swapTokensForExactCspr(params, path, client, casperService, senderPublicKey);
+      return [deployHash, deployResult];
       break;
     case SwapEntryPoint.SWAP_EXACT_TOKENS_FOR_TOKENS:
       [deployHash, deployResult] = await swapExactTokensForTokens(params, path, client, casperService, senderPublicKey);
+      return [deployHash, deployResult];
       break;
-  }
-
-  if (deployResult.execution_results[0].result.Success) {
-    console.log(`Deploy succeed ${deployHash}`);
-  } else {
-    console.error(`Deploy failed ${deployHash}`);
+    default:
+      throw { userError: true, msg: "unknown swap entry point" } as UserError;
+      break;
   }
 };

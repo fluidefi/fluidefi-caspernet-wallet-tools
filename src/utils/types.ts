@@ -1,6 +1,6 @@
 // Common Params for all endpoints
 
-export interface CommonOperationsPrams {
+export interface CommonOperationsParams {
   tokenA: string;
   tokenB: string;
   recipient?: string;

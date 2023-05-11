@@ -1,4 +1,4 @@
-import { CommonOperationsPrams } from "../../utils";
+import { CommonOperationsParams } from "../../utils";
 
 // Swap Mode
 export enum SwapMode {
@@ -7,7 +7,7 @@ export enum SwapMode {
 }
 
 // Post params for swap
-export interface SwapPrams extends CommonOperationsPrams {
+export interface SwapPrams extends CommonOperationsParams {
   mode: SwapMode;
   amount_in?: number;
   amount_out?: number;

@@ -6,12 +6,12 @@ import { sendBadRequestResponse, sendErrorResponse, sendOkResponse } from "../..
 import { UserError } from "../../exceptions";
 
 export const swapToknes = async (req: Request, res: Response) => {
-  const swapParams = req.body as SwapPrams;
-  const errors = postSwapValidator(swapParams);
+  const errors = postSwapValidator(req.body);
   if (errors) {
     return sendBadRequestResponse(res, errors);
   }
 
+  const swapParams = req.body as SwapPrams;
   try {
     const [deployHash, deployResult] = await swap(swapParams);
     return sendOkResponse(res, { msg: "", data: { deployHash } });

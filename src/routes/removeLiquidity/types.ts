@@ -5,3 +5,8 @@ export interface RemoveLiquidityParams extends CommonOperationsParams {
   amount_a: number;
   amount_b: number;
 }
+
+export enum RemoveLiquidityEntryPoint {
+  REMOVE_LIQUIDITY_CSPR = "remove_liquidity_cspr",
+  REMOVE_LIQUIDITY = "remove_liquidity",
+}

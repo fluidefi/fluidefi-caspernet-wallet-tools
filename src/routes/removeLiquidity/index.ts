@@ -1,8 +1,6 @@
-import { Router, Request, Response } from "express";
-import { RemoveLiquidityParams } from "./types";
+import { Router } from "express";
+import { removeLiquidity } from "./controller";
 const router = Router();
 
-router.post("/", (req: Request, res: Response) => {
-  const removeParams = req.body as RemoveLiquidityParams;
-});
+router.post("/", removeLiquidity);
 export { router as removeLiquidityRouter };

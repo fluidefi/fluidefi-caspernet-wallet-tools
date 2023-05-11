@@ -1,7 +1,7 @@
-import { Router, Request, Response } from "express";
+import { Router } from "express";
+import { swapToknes } from "./controller";
 const router = Router();
 
-router.get("/", (req: Request, res: Response) => {
-  res.send({ tokenA: "cspr" });
-});
+router.post("/", swapToknes);
+
 export { router as swapRouter };

@@ -1,19 +1,19 @@
 import { Request, Response } from "express";
-import { swap } from "./service";
-import { SwapPrams } from "./types";
-import { postSwapValidator } from "./validator";
+import { AddLiquidityParams } from "./types";
+import { postAddLiquidityValidator } from "./validator";
 import { sendBadRequestResponse, sendErrorResponse, sendOkResponse } from "../../utils";
+import { AddLiquidityService } from "./service";
 import { UserError } from "../../exceptions";
 
-export const swapToknes = async (req: Request, res: Response) => {
-  const errors = postSwapValidator(req.body);
+export const addLiquidity = async (req: Request, res: Response) => {
+  const errors = postAddLiquidityValidator(req.body);
   if (errors) {
     return sendBadRequestResponse(res, errors);
   }
 
-  const swapParams = req.body as SwapPrams;
+  const addLiquidityParams = req.body as AddLiquidityParams;
   try {
-    const [deployHash, deployResult] = await swap(swapParams);
+    const [deployHash, deployResult] = await AddLiquidityService(addLiquidityParams);
     return sendOkResponse(res, { msg: "", data: { deployHash } });
   } catch (err: any) {
     if ("userError" in err && err.userError) {

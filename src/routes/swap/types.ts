@@ -1,3 +1,5 @@
+import { CommonOperationsParams } from "../../utils";
+
 // Swap Mode
 export enum SwapMode {
   exactInput = "exactInput",
@@ -5,18 +7,10 @@ export enum SwapMode {
 }
 
 // Post params for swap
-export interface SwapPrams {
+export interface SwapPrams extends CommonOperationsParams {
   mode: SwapMode;
-  tokenA: string;
-  tokenB: string;
   amount_in?: number;
   amount_out?: number;
-  recipient?: string;
-  deadline?: number;
-  slippage?: number;
-  gasPrice?: number;
-  network?: string;
-  plateform?: string;
 }
 
 // swap entry point

@@ -1,7 +1,6 @@
-import { Router, Request, Response } from "express";
+import { Router } from "express";
+import { addLiquidity } from "./controller";
 const router = Router();
 
-router.get("/", (req: Request, res: Response) => {
-  res.send({ tokenA: "cspr" });
-});
+router.post("/", addLiquidity);
 export { router as addLiquidityRouter };

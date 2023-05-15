@@ -72,21 +72,21 @@ const removeLiquidity = async (
   const tokenAContract = new CLByteArray(Uint8Array.from(Buffer.from(tokenAPackageHash, "hex")));
   const tokenBContract = new CLByteArray(Uint8Array.from(Buffer.from(tokenBPackageHash, "hex")));
   await Promise.all([
-    signAndDeployAllowance(client, casperService, params.tokenA, new BigNumber(params.liquidity)),
-    signAndDeployAllowance(client, casperService, params.tokenB, new BigNumber(params.liquidity)),
+    signAndDeployAllowance(client, casperService, params.tokenA, new BigNumber(params.liquidity * 10 ** 9)),
+    signAndDeployAllowance(client, casperService, params.tokenB, new BigNumber(params.liquidity * 10 ** 9)),
   ]);
   const args = RuntimeArgs.fromMap({
     token_a: new CLKey(tokenAContract),
     token_b: new CLKey(tokenBContract),
-    liquidity: CLValueBuilder.u256(new BigNumber(params.liquidity).toFixed(0, BigNumber.ROUND_UP)),
+    liquidity: CLValueBuilder.u256(new BigNumber(params.liquidity * 10 ** 9).toFixed(0, BigNumber.ROUND_UP)),
     amount_a_min: CLValueBuilder.u256(
-      new BigNumber(params.amount_a).times(1 - (params.slippage || 0.5)).toFixed(0, BigNumber.ROUND_DOWN),
+      new BigNumber(params.amount_a * 10 ** 9).times(1 - params.slippage).toFixed(0, BigNumber.ROUND_DOWN),
     ),
     amount_b_min: CLValueBuilder.u256(
-      new BigNumber(params.amount_b).times(1 - (params.slippage || 0.5)).toFixed(0, BigNumber.ROUND_DOWN),
+      new BigNumber(params.amount_b * 10 ** 9).times(1 - params.slippage).toFixed(0, BigNumber.ROUND_DOWN),
     ),
     to: new CLKey(new CLAccountHash((senderPublicKey as CLPublicKey).toAccountHash())),
-    deadline: CLValueBuilder.u256(new BigNumber(params.deadline || 2).toFixed(0)),
+    deadline: CLValueBuilder.u256(new BigNumber(params.deadline).toFixed(0)),
 
     // Deploy params
     entrypoint: CLValueBuilder.string(entryPoint),
@@ -129,13 +129,13 @@ const removeLiquidityCspr = async (
     token: new CLKey(token),
     liquidity: CLValueBuilder.u256(new BigNumber(params.liquidity).toFixed(0, BigNumber.ROUND_UP)),
     amount_cspr_min: CLValueBuilder.u256(
-      new BigNumber(amountCSPRDesired).times(1 - (params.slippage || 1)).toFixed(0, BigNumber.ROUND_DOWN),
+      new BigNumber(amountCSPRDesired * 10 ** 9).times(1 - params.slippage).toFixed(0, BigNumber.ROUND_DOWN),
     ),
     amount_token_min: CLValueBuilder.u256(
-      new BigNumber(amountTokenDesired).times(1 - (params.slippage || 1)).toFixed(0, BigNumber.ROUND_DOWN),
+      new BigNumber(amountTokenDesired * 10 ** 9).times(1 - params.slippage).toFixed(0, BigNumber.ROUND_DOWN),
     ),
     to: new CLKey(new CLAccountHash((senderPublicKey as CLPublicKey).toAccountHash())),
-    deadline: CLValueBuilder.u256(new BigNumber(params.deadline || 1).toFixed(0)),
+    deadline: CLValueBuilder.u256(new BigNumber(params.deadline).toFixed(0)),
     to_purse: CLValueBuilder.uref(
       Uint8Array.from(Buffer.from(MAIN_PURSE.slice(5, 69), "hex")),
       AccessRights.READ_ADD_WRITE,
@@ -153,7 +153,7 @@ const removeLiquidityCspr = async (
     senderPublicKey,
     faucetKey,
     args,
-    new BigNumber(params.gasPrice || 1),
+    new BigNumber(params.gasPrice * 10 ** 9),
     params.network || "casper-test",
   );
 };

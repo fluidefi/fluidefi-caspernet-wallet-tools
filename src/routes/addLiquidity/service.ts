@@ -19,7 +19,6 @@ import { Token } from "../../entities";
 import BigNumber from "bignumber.js";
 import { Some } from "ts-results";
 import { CsprTokenSymbol, WCsprTokenSymbol, signAndDeployContractCall, signAndDeployWasm } from "../../utils";
-import { signAndDeployAllowance } from "../../utils/allowance";
 import { UserError } from "../../exceptions";
 
 const config = {
@@ -73,9 +72,7 @@ const addLiquiidityCspr = async (
     params.tokenA === CsprTokenSymbol
       ? new CLByteArray(Uint8Array.from(Buffer.from(tokenBPackageHash, "hex")))
       : new CLByteArray(Uint8Array.from(Buffer.from(tokenAPackageHash, "hex")));
-  const [allowaneToken, allowancePrice] =
-    params.tokenA === CsprTokenSymbol ? [params.tokenB, params.amount_b] : [params.tokenA, params.amount_a];
-  await signAndDeployAllowance(client, casperService, allowaneToken, new BigNumber(allowancePrice));
+
   const amountCSPRDesired =
     params.tokenA === CsprTokenSymbol ? new BigNumber(params.amount_a) : new BigNumber(params.amount_b);
   const amountTokenDesired =
@@ -120,10 +117,6 @@ const addLiquidity = async (
   senderPublicKey: CLPublicKey,
   entryPoint: AddLiquidityEntryPoint,
 ): Promise<[string, GetDeployResult]> => {
-  await Promise.all([
-    signAndDeployAllowance(client, casperService, params.tokenA, new BigNumber(params.amount_a)),
-    signAndDeployAllowance(client, casperService, params.tokenB, new BigNumber(params.amount_b)),
-  ]);
   const tokenAContract = new CLByteArray(Uint8Array.from(Buffer.from(tokenAPackageHash, "hex")));
   const tokenBContract = new CLByteArray(Uint8Array.from(Buffer.from(tokenBPackageHash, "hex")));
 

@@ -9,9 +9,11 @@ import {
   Keys,
   RuntimeArgs,
 } from "casper-js-sdk";
-import { PRIVATE_KEY, PUBLIC_KEY } from "../config";
+
 import BigNumber from "bignumber.js";
-import { signAndDeployContractCall } from "./deployUtils";
+import { CASPERNET_PROVIDER_URL, PRIVATE_KEY, PUBLIC_KEY } from "../../config";
+import { signAndDeployContractCall } from "../../utils";
+import { AllowanceParams } from "./types";
 
 const config = {
   network_name: "casper-test",
@@ -66,17 +68,12 @@ const getContractHash = (tokenSymbol: string): string => {
   return el ? el.contractHash : "";
 };
 
-export const signAndDeployAllowance = async (
-  casperClient: CasperClient,
-  casperService: CasperServiceByJsonRPC,
-  tokenSymbol: string,
-  amount: BigNumber.Value,
-): Promise<[string, GetDeployResult]> => {
+export const signAndDeployAllowance = async (params: AllowanceParams): Promise<[string, GetDeployResult]> => {
   try {
     const senderPublicKey = CLPublicKey.fromHex(PUBLIC_KEY);
-    const tokenContractHash = getContractHash(tokenSymbol);
-    console.log(`########### here we go`);
-    console.log(`ammount ${amount} contract Hash ${tokenContractHash}`);
+    const tokenContractHash = getContractHash(params.token);
+    const casperService = new CasperServiceByJsonRPC(CASPERNET_PROVIDER_URL);
+    const casperClient = new CasperClient(CASPERNET_PROVIDER_URL);
 
     const entryPoint = "increase_allowance";
 
@@ -84,7 +81,7 @@ export const signAndDeployAllowance = async (
     const spenderByteArray = new CLByteArray(Uint8Array.from(Buffer.from(spender, "hex")));
     const args = RuntimeArgs.fromMap({
       spender: new CLKey(spenderByteArray),
-      amount: CLValueBuilder.u256(new BigNumber(amount).toFixed(0)),
+      amount: CLValueBuilder.u256(new BigNumber(params.amount * 10 ** 9).toFixed(0)),
     });
 
     const [deployHash, deployResult] = await signAndDeployContractCall(
@@ -95,7 +92,7 @@ export const signAndDeployAllowance = async (
       tokenContractHash,
       entryPoint,
       args,
-      new BigNumber(5000000000),
+      new BigNumber(params.gasPrice * 10 ** 9 || 5000000000),
       "casper-test",
     );
 

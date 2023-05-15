@@ -19,7 +19,6 @@ import { UserError } from "../../exceptions";
 import BigNumber from "bignumber.js";
 import { AppDataSource } from "../../db";
 import { Token } from "../../entities";
-import { signAndDeployAllowance } from "../../utils/allowance";
 
 const config = {
   network_name: "casper-test",
@@ -71,10 +70,7 @@ const removeLiquidity = async (
 ): Promise<[string, GetDeployResult]> => {
   const tokenAContract = new CLByteArray(Uint8Array.from(Buffer.from(tokenAPackageHash, "hex")));
   const tokenBContract = new CLByteArray(Uint8Array.from(Buffer.from(tokenBPackageHash, "hex")));
-  await Promise.all([
-    signAndDeployAllowance(client, casperService, params.tokenA, new BigNumber(params.liquidity * 10 ** 9)),
-    signAndDeployAllowance(client, casperService, params.tokenB, new BigNumber(params.liquidity * 10 ** 9)),
-  ]);
+
   const args = RuntimeArgs.fromMap({
     token_a: new CLKey(tokenAContract),
     token_b: new CLKey(tokenBContract),
@@ -115,8 +111,6 @@ const removeLiquidityCspr = async (
   senderPublicKey: CLPublicKey,
   entryPoint: RemoveLiquidityEntryPoint,
 ): Promise<[string, GetDeployResult]> => {
-  const allowaneToken = params.tokenA === CsprTokenSymbol ? params.tokenB : params.tokenA;
-  await signAndDeployAllowance(client, casperService, allowaneToken, new BigNumber(params.liquidity));
   const token =
     params.tokenA === CsprTokenSymbol || params.tokenA === WCsprTokenSymbol
       ? new CLByteArray(Uint8Array.from(Buffer.from(tokenBPackageHash, "hex")))

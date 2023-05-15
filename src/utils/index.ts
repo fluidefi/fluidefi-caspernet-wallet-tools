@@ -7,3 +7,7 @@ export * from "./constants";
 export const sleep = async (ms: number) => {
   return new Promise((resolve) => setTimeout(resolve, ms));
 };
+
+export const convertToNotes = (value: number): bigint => {
+  return BigInt(value * 10 ** 9);
+};

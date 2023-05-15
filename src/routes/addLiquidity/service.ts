@@ -18,7 +18,13 @@ import { AppDataSource } from "../../db";
 import { Token } from "../../entities";
 import BigNumber from "bignumber.js";
 import { Some } from "ts-results";
-import { CsprTokenSymbol, WCsprTokenSymbol, signAndDeployContractCall, signAndDeployWasm } from "../../utils";
+import {
+  CsprTokenSymbol,
+  WCsprTokenSymbol,
+  convertToNotes,
+  signAndDeployContractCall,
+  signAndDeployWasm,
+} from "../../utils";
 import { UserError } from "../../exceptions";
 
 const config = {
@@ -74,25 +80,29 @@ const addLiquiidityCspr = async (
       : new CLByteArray(Uint8Array.from(Buffer.from(tokenAPackageHash, "hex")));
 
   const amountCSPRDesired =
-    params.tokenA === CsprTokenSymbol ? new BigNumber(params.amount_a) : new BigNumber(params.amount_b);
+    params.tokenA === CsprTokenSymbol
+      ? new BigNumber(convertToNotes(params.amount_a).toString())
+      : new BigNumber(convertToNotes(params.amount_b).toString());
   const amountTokenDesired =
-    params.tokenA !== CsprTokenSymbol ? new BigNumber(params.amount_a) : new BigNumber(params.amount_b);
+    params.tokenA !== CsprTokenSymbol
+      ? new BigNumber(convertToNotes(params.amount_a).toString())
+      : new BigNumber(convertToNotes(params.amount_b).toString());
   const args = RuntimeArgs.fromMap({
     token: new CLKey(token),
-    amount_cspr_desired: CLValueBuilder.u256(new BigNumber(amountCSPRDesired).toFixed(0, BigNumber.ROUND_UP)),
-    amount_token_desired: CLValueBuilder.u256(new BigNumber(amountTokenDesired).toFixed(0, BigNumber.ROUND_UP)),
+    amount_cspr_desired: CLValueBuilder.u256(amountCSPRDesired.toFixed(0, BigNumber.ROUND_UP)),
+    amount_token_desired: CLValueBuilder.u256(amountTokenDesired.toFixed(0, BigNumber.ROUND_UP)),
     amount_cspr_min: CLValueBuilder.u256(
-      new BigNumber(amountCSPRDesired).times(1 - (params.slippage || 2)).toFixed(0, BigNumber.ROUND_DOWN),
+      amountCSPRDesired.times(1 - (params.slippage || 2)).toFixed(0, BigNumber.ROUND_DOWN),
     ),
     amount_token_min: CLValueBuilder.u256(
-      new BigNumber(amountTokenDesired).times(1 - (params.slippage || 2)).toFixed(0, BigNumber.ROUND_DOWN),
+      amountTokenDesired.times(1 - (params.slippage || 2)).toFixed(0, BigNumber.ROUND_DOWN),
     ),
     pair: new CLOption(Some(new CLKey(token) as any) as any),
     to: new CLKey(new CLAccountHash((senderPublicKey as CLPublicKey).toAccountHash())),
-    deadline: CLValueBuilder.u256(new BigNumber(params.deadline || 2).toFixed(0)),
+    deadline: CLValueBuilder.u256(new BigNumber(params.deadline).toFixed(0)),
 
     // Deploy wasm params
-    amount: CLValueBuilder.u512(new BigNumber(amountCSPRDesired).toFixed(0)),
+    amount: CLValueBuilder.u512(amountCSPRDesired.toFixed(0)),
     entrypoint: CLValueBuilder.string(entryPoint),
     package_hash: new CLKey(new CLByteArray(Uint8Array.from(Buffer.from(config.router_package_hash, "hex")))),
   });
@@ -103,7 +113,7 @@ const addLiquiidityCspr = async (
     senderPublicKey,
     faucetKey,
     args,
-    new BigNumber(params.gasPrice || 3),
+    new BigNumber(convertToNotes(params.gasPrice).toString()),
     params.network || "capser-test",
   );
 };
@@ -123,17 +133,25 @@ const addLiquidity = async (
   const argss = RuntimeArgs.fromMap({
     token_a: new CLKey(tokenAContract),
     token_b: new CLKey(tokenBContract),
-    amount_a_desired: CLValueBuilder.u256(new BigNumber(params.amount_a).toFixed(0, BigNumber.ROUND_CEIL)),
-    amount_b_desired: CLValueBuilder.u256(new BigNumber(params.amount_b).toFixed(0, BigNumber.ROUND_CEIL)),
+    amount_a_desired: CLValueBuilder.u256(
+      new BigNumber(convertToNotes(params.amount_a).toString()).toFixed(0, BigNumber.ROUND_CEIL),
+    ),
+    amount_b_desired: CLValueBuilder.u256(
+      new BigNumber(convertToNotes(params.amount_b).toString()).toFixed(0, BigNumber.ROUND_CEIL),
+    ),
     amount_a_min: CLValueBuilder.u256(
-      new BigNumber(params.amount_a).times(1 - (params.slippage || 2)).toFixed(0, BigNumber.ROUND_FLOOR),
+      new BigNumber(convertToNotes(params.amount_a).toString())
+        .times(1 - (params.slippage || 2))
+        .toFixed(0, BigNumber.ROUND_FLOOR),
     ),
     amount_b_min: CLValueBuilder.u256(
-      new BigNumber(params.amount_b).times(1 - (params.slippage || 2)).toFixed(0, BigNumber.ROUND_FLOOR),
+      new BigNumber(convertToNotes(params.amount_b).toString())
+        .times(1 - (params.slippage || 2))
+        .toFixed(0, BigNumber.ROUND_FLOOR),
     ),
     pair: new CLOption(Some(new CLKey(tokenBContract) as any) as any),
     to: new CLKey(new CLAccountHash((senderPublicKey as CLPublicKey).toAccountHash())),
-    deadline: CLValueBuilder.u256(new BigNumber(params.deadline || 2).toFixed(0)),
+    deadline: CLValueBuilder.u256(new BigNumber(params.deadline).toFixed(0)),
 
     // Deploy wasm params
     entrypoint: CLValueBuilder.string(entryPoint),
@@ -181,9 +199,6 @@ export const AddLiquidityService = async (params: AddLiquidityParams): Promise<[
         entryPoint,
       );
 
-      console.log(`Deploy hash ${deployHashCspr}`);
-      console.log(`deploy result`, deployResultCspr);
-
       return [deployHashCspr, deployResultCspr];
       break;
     case AddLiquidityEntryPoint.ADD_LIQUIDITY:
@@ -196,8 +211,6 @@ export const AddLiquidityService = async (params: AddLiquidityParams): Promise<[
         senderPublicKey,
         entryPoint,
       );
-      console.log(`Deploy hash ${deployHash}`);
-      console.log(`deploy result`, deployResult);
 
       return [deployHash, deployResult];
       break;

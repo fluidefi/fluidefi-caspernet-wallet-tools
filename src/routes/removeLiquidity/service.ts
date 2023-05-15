@@ -12,7 +12,7 @@ import {
   Keys,
   RuntimeArgs,
 } from "casper-js-sdk";
-import { CsprTokenSymbol, WCsprTokenSymbol, signAndDeployContractCall, signAndDeployWasm } from "../../utils";
+import { CsprTokenSymbol, WCsprTokenSymbol, convertToNotes, signAndDeployContractCall, signAndDeployWasm } from "../../utils";
 import { RemoveLiquidityEntryPoint, RemoveLiquidityParams } from "./types";
 import { CASPERNET_PROVIDER_URL, PRIVATE_KEY, PUBLIC_KEY } from "../../config";
 import { UserError } from "../../exceptions";
@@ -74,12 +74,18 @@ const removeLiquidity = async (
   const args = RuntimeArgs.fromMap({
     token_a: new CLKey(tokenAContract),
     token_b: new CLKey(tokenBContract),
-    liquidity: CLValueBuilder.u256(new BigNumber(params.liquidity * 10 ** 9).toFixed(0, BigNumber.ROUND_UP)),
+    liquidity: CLValueBuilder.u256(
+      new BigNumber(convertToNotes(params.liquidity).toString()).toFixed(0, BigNumber.ROUND_UP),
+    ),
     amount_a_min: CLValueBuilder.u256(
-      new BigNumber(params.amount_a * 10 ** 9).times(1 - params.slippage).toFixed(0, BigNumber.ROUND_DOWN),
+      new BigNumber(convertToNotes(params.amount_a).toString())
+        .times(1 - params.slippage)
+        .toFixed(0, BigNumber.ROUND_DOWN),
     ),
     amount_b_min: CLValueBuilder.u256(
-      new BigNumber(params.amount_b * 10 ** 9).times(1 - params.slippage).toFixed(0, BigNumber.ROUND_DOWN),
+      new BigNumber(convertToNotes(params.amount_b).toString())
+        .times(1 - params.slippage)
+        .toFixed(0, BigNumber.ROUND_DOWN),
     ),
     to: new CLKey(new CLAccountHash((senderPublicKey as CLPublicKey).toAccountHash())),
     deadline: CLValueBuilder.u256(new BigNumber(params.deadline).toFixed(0)),
@@ -97,7 +103,7 @@ const removeLiquidity = async (
     config.auction_manager_contract_hash,
     entryPoint,
     args,
-    new BigNumber(params.gasPrice || 1),
+    new BigNumber(convertToNotes(params.gasPrice).toString()),
     params.network || "casper-test",
   );
 };
@@ -123,10 +129,14 @@ const removeLiquidityCspr = async (
     token: new CLKey(token),
     liquidity: CLValueBuilder.u256(new BigNumber(params.liquidity).toFixed(0, BigNumber.ROUND_UP)),
     amount_cspr_min: CLValueBuilder.u256(
-      new BigNumber(amountCSPRDesired * 10 ** 9).times(1 - params.slippage).toFixed(0, BigNumber.ROUND_DOWN),
+      new BigNumber(convertToNotes(amountCSPRDesired).toString())
+        .times(1 - params.slippage)
+        .toFixed(0, BigNumber.ROUND_DOWN),
     ),
     amount_token_min: CLValueBuilder.u256(
-      new BigNumber(amountTokenDesired * 10 ** 9).times(1 - params.slippage).toFixed(0, BigNumber.ROUND_DOWN),
+      new BigNumber(convertToNotes(amountTokenDesired).toString())
+        .times(1 - params.slippage)
+        .toFixed(0, BigNumber.ROUND_DOWN),
     ),
     to: new CLKey(new CLAccountHash((senderPublicKey as CLPublicKey).toAccountHash())),
     deadline: CLValueBuilder.u256(new BigNumber(params.deadline).toFixed(0)),
@@ -147,7 +157,7 @@ const removeLiquidityCspr = async (
     senderPublicKey,
     faucetKey,
     args,
-    new BigNumber(params.gasPrice * 10 ** 9),
+    new BigNumber(convertToNotes(params.gasPrice).toString()),
     params.network || "casper-test",
   );
 };

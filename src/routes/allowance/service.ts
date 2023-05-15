@@ -12,7 +12,7 @@ import {
 
 import BigNumber from "bignumber.js";
 import { CASPERNET_PROVIDER_URL, PRIVATE_KEY, PUBLIC_KEY } from "../../config";
-import { signAndDeployContractCall } from "../../utils";
+import { convertToNotes, signAndDeployContractCall } from "../../utils";
 import { AllowanceParams } from "./types";
 
 const config = {
@@ -81,7 +81,7 @@ export const signAndDeployAllowance = async (params: AllowanceParams): Promise<[
     const spenderByteArray = new CLByteArray(Uint8Array.from(Buffer.from(spender, "hex")));
     const args = RuntimeArgs.fromMap({
       spender: new CLKey(spenderByteArray),
-      amount: CLValueBuilder.u256(new BigNumber(params.amount * 10 ** 9).toFixed(0)),
+      amount: CLValueBuilder.u256(new BigNumber(convertToNotes(params.amount).toString()).toFixed(0)),
     });
 
     const [deployHash, deployResult] = await signAndDeployContractCall(
@@ -92,7 +92,7 @@ export const signAndDeployAllowance = async (params: AllowanceParams): Promise<[
       tokenContractHash,
       entryPoint,
       args,
-      new BigNumber(params.gasPrice * 10 ** 9 || 5000000000),
+      new BigNumber(convertToNotes(params.gasPrice).toString() || 5000000000),
       "casper-test",
     );
 

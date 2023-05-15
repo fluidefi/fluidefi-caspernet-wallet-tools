@@ -13,8 +13,6 @@ import {
   CasperClient,
   GetDeployResult,
 } from "casper-js-sdk";
-import fs from "fs";
-import { join } from "path";
 import { PUBLIC_KEY, PRIVATE_KEY, CASPERNET_PROVIDER_URL } from "../../config";
 import { PathResponse, SwapEntryPoint, SwapPrams } from "./types";
 import { CsprTokenSymbol, WCsprTokenSymbol, getPath, signAndDeployContractCall, signAndDeployWasm } from "../../utils";
@@ -86,11 +84,11 @@ const swapTokensForExactCspr = async (
   senderPublicKey: CLPublicKey,
 ): Promise<[string, GetDeployResult]> => {
   const args = RuntimeArgs.fromMap({
-    amount_out: CLValueBuilder.u256(params.amount_in || 1),
-    amount_in_max: CLValueBuilder.u256(params.amount_out || 2),
+    amount_out: CLValueBuilder.u256(params.amount_in * 10 ** 9),
+    amount_in_max: CLValueBuilder.u256(params.amount_out * 10 ** 9),
     path: new CLList(path),
     to: CLValueBuilder.uref(Uint8Array.from(Buffer.from(MAIN_PURSE.slice(5, 69), "hex")), AccessRights.READ_ADD_WRITE),
-    deadline: CLValueBuilder.u256(params.deadline || 2),
+    deadline: CLValueBuilder.u256(params.deadline),
 
     // Deploy wasm params
     entrypoint: CLValueBuilder.string(SwapEntryPoint.SWAP_TOKENS_FOR_EXACT_CSPR),
@@ -101,9 +99,8 @@ const swapTokensForExactCspr = async (
     casperService,
     senderPublicKey,
     faucetKey,
-    new Uint8Array(fs.readFileSync(join(__dirname, "session-code-router.wasm"))),
     args,
-    new BigNumber(params.gasPrice || 3.14),
+    new BigNumber(params.gasPrice * 10 ** 9),
     params.network || "casper-test",
   );
 };
@@ -116,11 +113,11 @@ const swapExactTokensForCspr = async (
   senderPublicKey: CLPublicKey,
 ): Promise<[string, GetDeployResult]> => {
   const args = RuntimeArgs.fromMap({
-    amount_in: CLValueBuilder.u256(params.amount_in || 1),
-    amount_out_min: CLValueBuilder.u256(params.amount_out || 1),
+    amount_in: CLValueBuilder.u256(params.amount_in * 10 ** 9),
+    amount_out_min: CLValueBuilder.u256(params.amount_out * 10 ** 9),
     path: new CLList(path),
     to: CLValueBuilder.uref(Uint8Array.from(Buffer.from(MAIN_PURSE.slice(5, 69), "hex")), AccessRights.READ_ADD_WRITE),
-    deadline: CLValueBuilder.u256(params.deadline || 2),
+    deadline: CLValueBuilder.u256(params.deadline),
 
     // Deploy wasm params
     entrypoint: CLValueBuilder.string(SwapEntryPoint.SWAP_EXACT_TOKENS_FOR_CSPR),
@@ -131,9 +128,8 @@ const swapExactTokensForCspr = async (
     casperService,
     senderPublicKey,
     faucetKey,
-    new Uint8Array(fs.readFileSync(join(__dirname, "session-code-router.wasm"))),
     args,
-    new BigNumber(params.gasPrice || 3.14),
+    new BigNumber(params.gasPrice * 10 ** 9),
     params.network || "casper-test",
   );
 };
@@ -145,15 +141,24 @@ const swapExactCsprForTokens = async (
   casperService: CasperServiceByJsonRPC,
   senderPublicKey: CLPublicKey,
 ): Promise<[string, GetDeployResult]> => {
+  const clientBalance = await client.balanceOfByPublicKey(senderPublicKey);
+  const balance = clientBalance.toBigInt();
+  console.log(`Your balance is ${balance}`);
+  if (balance < params.amount_in * 10 ** 9) {
+    throw {
+      userError: true,
+      msg: `insufficient CSPR balance. Your CSPR balance is ${clientBalance.div(10 ** 9).toNumber()}`,
+    };
+  }
   const args = RuntimeArgs.fromMap({
-    amount_in: CLValueBuilder.u256(params.amount_in || 1),
-    amount_out_min: CLValueBuilder.u256(params.amount_out || 1),
+    amount_in: CLValueBuilder.u256(params.amount_in * 10 ** 9),
+    amount_out_min: CLValueBuilder.u256(params.amount_out * 10 ** 9),
     path: new CLList(path),
     to: new CLKey(new CLAccountHash((senderPublicKey as CLPublicKey).toAccountHash())),
-    deadline: CLValueBuilder.u256(params.deadline || 1),
+    deadline: CLValueBuilder.u256(params.deadline),
 
     // Deploy wasm params
-    amount: CLValueBuilder.u512(params.amount_in || 1),
+    amount: CLValueBuilder.u512(params.amount_in * 10 ** 9),
     entrypoint: CLValueBuilder.string(SwapEntryPoint.SWAP_EXACT_CSPR_FOR_TOKENS),
     package_hash: new CLKey(new CLByteArray(Uint8Array.from(Buffer.from(config.router_package_hash, "hex")))),
   });
@@ -163,7 +168,7 @@ const swapExactCsprForTokens = async (
     senderPublicKey,
     faucetKey,
     args,
-    new BigNumber(params.gasPrice || 3.14),
+    new BigNumber(params.gasPrice * 10 ** 9),
     params.network || "casper-test",
   );
 };
@@ -178,11 +183,11 @@ const swapExactTokensForTokens = async (
   const entryPoint = SwapEntryPoint.SWAP_EXACT_TOKENS_FOR_TOKENS;
 
   const args = RuntimeArgs.fromMap({
-    amount_in: CLValueBuilder.u256(params.amount_in || 1),
-    amount_out_min: CLValueBuilder.u256(params.amount_out || 2),
+    amount_in: CLValueBuilder.u256(params.amount_in * 10 ** 9),
+    amount_out_min: CLValueBuilder.u256(params.amount_out * 10 ** 9),
     path: new CLList(path),
     to: new CLKey(new CLAccountHash((senderPublicKey as CLPublicKey).toAccountHash())),
-    deadline: CLValueBuilder.u256(params.deadline || 2),
+    deadline: CLValueBuilder.u256(params.deadline),
 
     // Deploy wasm params
     entrypoint: CLValueBuilder.string(entryPoint),
@@ -197,7 +202,7 @@ const swapExactTokensForTokens = async (
     config.auction_manager_contract_hash,
     entryPoint,
     args,
-    new BigNumber(params.gasPrice || 3.14),
+    new BigNumber(params.gasPrice * 10 ** 9),
     params.network || "casper-test",
   );
 };

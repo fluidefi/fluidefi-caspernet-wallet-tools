@@ -9,8 +9,8 @@ export enum SwapMode {
 // Post params for swap
 export interface SwapPrams extends CommonOperationsParams {
   mode: SwapMode;
-  amount_in?: number;
-  amount_out?: number;
+  amount_in: number;
+  amount_out: number;
 }
 
 // swap entry point

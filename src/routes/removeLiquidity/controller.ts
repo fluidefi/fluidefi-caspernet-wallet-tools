@@ -7,7 +7,7 @@ import { UserError } from "../../exceptions";
 
 export const removeLiquidity = async (req: Request, res: Response) => {
   const errors = postRemoveLiquidityValidator(req.body);
-  if (!errors) {
+  if (errors) {
     return sendBadRequestResponse(res, errors);
   }
   const removeLiquidityParams: RemoveLiquidityParams = req.body;

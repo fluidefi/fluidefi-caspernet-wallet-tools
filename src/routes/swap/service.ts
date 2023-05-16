@@ -91,11 +91,17 @@ const swapTokensForExactCspr = async (
   senderPublicKey: CLPublicKey,
 ): Promise<[string, GetDeployResult]> => {
   const args = RuntimeArgs.fromMap({
-    amount_out: CLValueBuilder.u256(convertToNotes(params.amount_in).toString()),
-    amount_in_max: CLValueBuilder.u256(convertToNotes(params.amount_out).toString()),
+    amount_out: CLValueBuilder.u256(
+      new BigNumber(convertToNotes(params.amount_out).toString()).toFixed(0, BigNumber.ROUND_DOWN),
+    ),
+    amount_in_max: CLValueBuilder.u256(
+      new BigNumber(new BigNumber(convertToNotes(params.amount_in).toString()))
+        .times(1 + params.slippage)
+        .toFixed(0, BigNumber.ROUND_UP),
+    ),
     path: new CLList(path),
     to: CLValueBuilder.uref(Uint8Array.from(Buffer.from(MAIN_PURSE.slice(5, 69), "hex")), AccessRights.READ_ADD_WRITE),
-    deadline: CLValueBuilder.u256(params.deadline),
+    deadline: CLValueBuilder.u256(new BigNumber(params.deadline).toFixed(0)),
 
     // Deploy wasm params
     entrypoint: CLValueBuilder.string(SwapEntryPoint.SWAP_TOKENS_FOR_EXACT_CSPR),
@@ -120,11 +126,18 @@ const swapExactTokensForCspr = async (
   senderPublicKey: CLPublicKey,
 ): Promise<[string, GetDeployResult]> => {
   const args = RuntimeArgs.fromMap({
-    amount_in: CLValueBuilder.u256(convertToNotes(params.amount_in).toString()),
-    amount_out_min: CLValueBuilder.u256(convertToNotes(params.amount_out).toString()),
+    //amount_in: CLValueBuilder.u256(convertToNotes(params.amount_in).toString()),
+    amount_in: CLValueBuilder.u256(
+      new BigNumber(convertToNotes(params.amount_in).toString()).toFixed(0, BigNumber.ROUND_UP),
+    ),
+    amount_out_min: CLValueBuilder.u256(
+      new BigNumber(convertToNotes(params.amount_out).toString())
+        .times(1 - params.slippage)
+        .toFixed(0, BigNumber.ROUND_DOWN),
+    ),
     path: new CLList(path),
     to: CLValueBuilder.uref(Uint8Array.from(Buffer.from(MAIN_PURSE.slice(5, 69), "hex")), AccessRights.READ_ADD_WRITE),
-    deadline: CLValueBuilder.u256(params.deadline),
+    deadline: CLValueBuilder.u256(new BigNumber(params.deadline).toFixed(0)),
 
     // Deploy wasm params
     entrypoint: CLValueBuilder.string(SwapEntryPoint.SWAP_EXACT_TOKENS_FOR_CSPR),
@@ -158,14 +171,20 @@ const swapExactCsprForTokens = async (
     };
   }
   const args = RuntimeArgs.fromMap({
-    amount_in: CLValueBuilder.u256(new BigNumber(convertToNotes(params.amount_in).toString()).toString()),
-    amount_out_min: CLValueBuilder.u256(new BigNumber(convertToNotes(params.amount_out).toString()).toString()),
+    amount_in: CLValueBuilder.u256(
+      new BigNumber(convertToNotes(params.amount_in).toString()).toFixed(0, BigNumber.ROUND_UP),
+    ),
+    amount_out_min: CLValueBuilder.u256(
+      new BigNumber(convertToNotes(params.amount_out).toString())
+        .times(1 - params.slippage)
+        .toFixed(0, BigNumber.ROUND_DOWN),
+    ),
     path: new CLList(path),
     to: new CLKey(new CLAccountHash((senderPublicKey as CLPublicKey).toAccountHash())),
-    deadline: CLValueBuilder.u256(params.deadline),
+    deadline: CLValueBuilder.u256(new BigNumber(params.deadline).toFixed(0)),
 
     // Deploy wasm params
-    amount: CLValueBuilder.u512(new BigNumber(convertToNotes(params.amount_in).toString()).toString()),
+    amount: CLValueBuilder.u512(new BigNumber(convertToNotes(params.amount_in).toString()).toFixed(0)),
     entrypoint: CLValueBuilder.string(SwapEntryPoint.SWAP_EXACT_CSPR_FOR_TOKENS),
     package_hash: new CLKey(new CLByteArray(Uint8Array.from(Buffer.from(config.router_package_hash, "hex")))),
   });
@@ -190,28 +209,43 @@ const swapExactTokensForTokens = async (
   const entryPoint = SwapEntryPoint.SWAP_EXACT_TOKENS_FOR_TOKENS;
 
   const args = RuntimeArgs.fromMap({
-    amount_in: CLValueBuilder.u256(convertToNotes(params.amount_in)),
-    amount_out_min: CLValueBuilder.u256(convertToNotes(params.amount_out)),
+    amount_in: CLValueBuilder.u256(
+      new BigNumber(convertToNotes(params.amount_in).toString()).toFixed(0, BigNumber.ROUND_UP),
+    ),
+    amount_out_min: CLValueBuilder.u256(
+      new BigNumber(convertToNotes(params.amount_out).toString())
+        .times(1 - params.slippage)
+        .toFixed(0, BigNumber.ROUND_DOWN),
+    ),
     path: new CLList(path),
     to: new CLKey(new CLAccountHash((senderPublicKey as CLPublicKey).toAccountHash())),
-    deadline: CLValueBuilder.u256(params.deadline),
+    deadline: CLValueBuilder.u256(new BigNumber(params.deadline).toFixed(0)),
 
     // Deploy wasm params
     entrypoint: CLValueBuilder.string(entryPoint),
     package_hash: new CLKey(new CLByteArray(Uint8Array.from(Buffer.from(config.router_package_hash, "hex")))),
   });
 
-  return await signAndDeployContractCall(
+  return await signAndDeployWasm(
     client,
     casperService,
     senderPublicKey,
     faucetKey,
-    config.auction_manager_contract_hash,
-    entryPoint,
     args,
     new BigNumber(convertToNotes(params.gasPrice).toString()),
     params.network || "casper-test",
   );
+  // return await signAndDeployContractCall(
+  //   client,
+  //   casperService,
+  //   senderPublicKey,
+  //   faucetKey,
+  //   config.auction_manager_contract_hash,
+  //   entryPoint,
+  //   args,
+  //   new BigNumber(convertToNotes(params.gasPrice).toString()),
+  //   params.network || "casper-test",
+  // );
 };
 
 export const swap = async (params: SwapPrams): Promise<[string, GetDeployResult]> => {

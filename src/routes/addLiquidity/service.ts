@@ -91,11 +91,9 @@ const addLiquiidityCspr = async (
     token: new CLKey(token),
     amount_cspr_desired: CLValueBuilder.u256(amountCSPRDesired.toFixed(0, BigNumber.ROUND_UP)),
     amount_token_desired: CLValueBuilder.u256(amountTokenDesired.toFixed(0, BigNumber.ROUND_UP)),
-    amount_cspr_min: CLValueBuilder.u256(
-      amountCSPRDesired.times(1 - (params.slippage || 2)).toFixed(0, BigNumber.ROUND_DOWN),
-    ),
+    amount_cspr_min: CLValueBuilder.u256(amountCSPRDesired.times(1 - params.slippage).toFixed(0, BigNumber.ROUND_DOWN)),
     amount_token_min: CLValueBuilder.u256(
-      amountTokenDesired.times(1 - (params.slippage || 2)).toFixed(0, BigNumber.ROUND_DOWN),
+      amountTokenDesired.times(1 - params.slippage).toFixed(0, BigNumber.ROUND_DOWN),
     ),
     pair: new CLOption(Some(new CLKey(token) as any) as any),
     to: new CLKey(new CLAccountHash((senderPublicKey as CLPublicKey).toAccountHash())),
@@ -130,7 +128,7 @@ const addLiquidity = async (
   const tokenAContract = new CLByteArray(Uint8Array.from(Buffer.from(tokenAPackageHash, "hex")));
   const tokenBContract = new CLByteArray(Uint8Array.from(Buffer.from(tokenBPackageHash, "hex")));
 
-  const argss = RuntimeArgs.fromMap({
+  const args = RuntimeArgs.fromMap({
     token_a: new CLKey(tokenAContract),
     token_b: new CLKey(tokenBContract),
     amount_a_desired: CLValueBuilder.u256(
@@ -141,12 +139,12 @@ const addLiquidity = async (
     ),
     amount_a_min: CLValueBuilder.u256(
       new BigNumber(convertToNotes(params.amount_a).toString())
-        .times(1 - (params.slippage || 2))
+        .times(1 - params.slippage)
         .toFixed(0, BigNumber.ROUND_FLOOR),
     ),
     amount_b_min: CLValueBuilder.u256(
       new BigNumber(convertToNotes(params.amount_b).toString())
-        .times(1 - (params.slippage || 2))
+        .times(1 - params.slippage)
         .toFixed(0, BigNumber.ROUND_FLOOR),
     ),
     pair: new CLOption(Some(new CLKey(tokenBContract) as any) as any),
@@ -157,7 +155,16 @@ const addLiquidity = async (
     entrypoint: CLValueBuilder.string(entryPoint),
     package_hash: new CLKey(new CLByteArray(Uint8Array.from(Buffer.from(config.router_package_hash, "hex")))),
   });
-
+  return await signAndDeployWasm(
+    client,
+    casperService,
+    senderPublicKey,
+    faucetKey,
+    args,
+    new BigNumber(convertToNotes(params.gasPrice).toString()),
+    params.network || "capser-test",
+  );
+  /*
   return await signAndDeployContractCall(
     client,
     casperService,
@@ -166,9 +173,9 @@ const addLiquidity = async (
     config.auction_manager_contract_hash,
     entryPoint,
     argss,
-    new BigNumber(params.gasPrice || 2),
+    new BigNumber(convertToNotes(params.gasPrice).toString()),
     params.network || "casper-test",
-  );
+  );*/
 };
 
 export const AddLiquidityService = async (params: AddLiquidityParams): Promise<[string, GetDeployResult]> => {

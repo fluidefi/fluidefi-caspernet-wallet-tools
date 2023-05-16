@@ -12,8 +12,9 @@ import {
 
 import BigNumber from "bignumber.js";
 import { CASPERNET_PROVIDER_URL, PRIVATE_KEY, PUBLIC_KEY } from "../../config";
-import { convertToNotes, signAndDeployContractCall } from "../../utils";
+import { convertToNotes, getPairContractAddress, getTokenPackageHash, signAndDeployContractCall } from "../../utils";
 import { AllowanceParams } from "./types";
+import { UserError } from "../../exceptions";
 
 const config = {
   network_name: "casper-test",
@@ -68,15 +69,39 @@ const getContractHash = (tokenSymbol: string): string => {
   return el ? el.contractHash : "";
 };
 
+const getContractHashForPair = async (tokenA: string, tokenB: string): Promise<string> => {
+  const [tokenAPackageHash, tokenBPackageHash] = await Promise.all([
+    getTokenPackageHash(tokenA),
+    getTokenPackageHash(tokenB),
+  ]);
+
+  const [pairContractHash, pairContractHashBis] = await Promise.all([
+    getPairContractAddress(tokenAPackageHash, tokenBPackageHash),
+    getPairContractAddress(tokenBPackageHash, tokenAPackageHash),
+  ]);
+
+  if (!pairContractHash && !pairContractHashBis) {
+    throw { userError: true, msg: `Uknown pairs ${tokenA} - ${tokenB} || ${tokenB} - ${tokenA}` } as UserError;
+  } else if (pairContractHash) {
+    return pairContractHash;
+  } else {
+    return pairContractHashBis;
+  }
+};
+
 export const signAndDeployAllowance = async (params: AllowanceParams): Promise<[string, GetDeployResult]> => {
   try {
     const senderPublicKey = CLPublicKey.fromHex(PUBLIC_KEY);
-    const tokenContractHash = getContractHash(params.token);
     const casperService = new CasperServiceByJsonRPC(CASPERNET_PROVIDER_URL);
     const casperClient = new CasperClient(CASPERNET_PROVIDER_URL);
 
     const entryPoint = "increase_allowance";
-
+    let tokenContractHash = "";
+    if (!params.tokenB) {
+      tokenContractHash = getContractHash(params.token);
+    } else {
+      tokenContractHash = await getContractHashForPair(params.token, params.tokenB);
+    }
     const spender = config.router_package_hash;
     const spenderByteArray = new CLByteArray(Uint8Array.from(Buffer.from(spender, "hex")));
     const args = RuntimeArgs.fromMap({

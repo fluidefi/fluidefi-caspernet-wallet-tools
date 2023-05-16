@@ -1,5 +1,5 @@
 import { PostgresConnectionOptions } from "typeorm/driver/postgres/PostgresConnectionOptions";
-import { LiquidityPool, Token } from "../entities";
+import { AllPairs, LiquidityPool, Token } from "../entities";
 import { DBCreds } from "../config";
 import { DataSource } from "typeorm";
 
@@ -12,7 +12,7 @@ export const DataSourceOptions: PostgresConnectionOptions = {
   database: DBCreds.dbName,
   synchronize: false,
   logging: false,
-  entities: [LiquidityPool, Token],
+  entities: [LiquidityPool, Token, AllPairs],
   migrations: [],
   subscribers: [],
   extra: { max: 30 },

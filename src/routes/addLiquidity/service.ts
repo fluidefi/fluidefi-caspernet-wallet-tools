@@ -14,14 +14,12 @@ import {
 } from "casper-js-sdk";
 import { AddLiquidityEntryPoint, AddLiquidityParams } from "./types";
 import { CASPERNET_PROVIDER_URL, PRIVATE_KEY, PUBLIC_KEY } from "../../config";
-import { AppDataSource } from "../../db";
-import { Token } from "../../entities";
 import BigNumber from "bignumber.js";
 import { Some } from "ts-results";
 import {
   CsprTokenSymbol,
-  WCsprTokenSymbol,
   convertToNotes,
+  getTokenPackageHash,
   signAndDeployContractCall,
   signAndDeployWasm,
 } from "../../utils";
@@ -51,18 +49,6 @@ const selectAddLiquidityEntryPoint = (tokenASymbol: string, tokenBSymbol: string
     return AddLiquidityEntryPoint.ADD_LIQUIDITY;
   }
   return null;
-};
-
-const getTokenPackageHash = async (tokenSymbol: string): Promise<string> => {
-  const dbInstance = AppDataSource.getInstance();
-  const tokensRepository = dbInstance.getRepository(Token);
-  if (tokenSymbol === CsprTokenSymbol) tokenSymbol = WCsprTokenSymbol;
-  const token = await tokensRepository.find({ where: { tokenSymbol } });
-
-  if (!token || token.length !== 1) {
-    return "";
-  }
-  return token[0].tokenAddress;
 };
 
 const addLiquiidityCspr = async (

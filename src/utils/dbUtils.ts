@@ -25,3 +25,23 @@ export const getPairContractAddress = async (token0Address: string, token1Addres
   }
   return pair[0].contractAddress;
 };
+
+export const getAllPairs = async (): Promise<AllPairs[]> => {
+  const dbInstance = AppDataSource.getInstance();
+  const pairRepository = dbInstance.getRepository(AllPairs);
+
+  const allPairs = await pairRepository.find();
+
+  return allPairs;
+};
+
+export const getTokenByAddress = async (tokenAddress: string): Promise<Token | undefined> => {
+  const dbInstance = AppDataSource.getInstance();
+  const tokensRepository = dbInstance.getRepository(Token);
+
+  const token = await tokensRepository.find({ where: { tokenAddress } });
+  if (!token || token.length == 0) {
+    return undefined;
+  }
+  return token[0];
+};

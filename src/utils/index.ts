@@ -9,6 +9,6 @@ export const sleep = async (ms: number) => {
   return new Promise((resolve) => setTimeout(resolve, ms));
 };
 
-export const convertToNotes = (value: number): bigint => {
-  return BigInt(value * 10 ** 9);
+export const convertToNotes = (value: number): number => {
+  return value * 10 ** 9;
 };

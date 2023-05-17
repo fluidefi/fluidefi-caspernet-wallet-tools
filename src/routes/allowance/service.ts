@@ -12,7 +12,14 @@ import {
 
 import BigNumber from "bignumber.js";
 import { CASPERNET_PROVIDER_URL, PRIVATE_KEY, PUBLIC_KEY } from "../../config";
-import { convertToNotes, getPairContractAddress, getTokenPackageHash, signAndDeployContractCall } from "../../utils";
+import {
+  CsprTokenSymbol,
+  WCsprTokenSymbol,
+  convertToNotes,
+  getPairContractAddress,
+  getTokenPackageHash,
+  signAndDeployContractCall,
+} from "../../utils";
 import { AllowanceParams } from "./types";
 import { UserError } from "../../exceptions";
 
@@ -70,6 +77,8 @@ const getContractHash = (tokenSymbol: string): string => {
 };
 
 const getContractHashForPair = async (tokenA: string, tokenB: string): Promise<string> => {
+  tokenA = tokenA == CsprTokenSymbol ? WCsprTokenSymbol : tokenA;
+  tokenB = tokenB == CsprTokenSymbol ? WCsprTokenSymbol : tokenB;
   const [tokenAPackageHash, tokenBPackageHash] = await Promise.all([
     getTokenPackageHash(tokenA),
     getTokenPackageHash(tokenB),

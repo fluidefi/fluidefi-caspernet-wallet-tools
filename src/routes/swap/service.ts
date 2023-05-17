@@ -163,13 +163,13 @@ const swapExactCsprForTokens = async (
 ): Promise<[string, GetDeployResult]> => {
   const clientBalance = await client.balanceOfByPublicKey(senderPublicKey);
   const balance = clientBalance.toBigInt();
-  console.log(`Your balance is ${balance}`);
-  if (balance < convertToNotes(params.amount_in)) {
-    throw {
-      userError: true,
-      msg: `insufficient CSPR balance. Your CSPR balance is ${clientBalance.div(10 ** 9).toNumber()}`,
-    };
-  }
+  // console.log(`Your balance is ${balance}`);
+  // if (balance < convertToNotes(params.amount_in)) {
+  //   throw {
+  //     userError: true,
+  //     msg: `insufficient CSPR balance. Your CSPR balance is ${clientBalance.div(10 ** 9).toNumber()}`,
+  //   };
+  // }
   const args = RuntimeArgs.fromMap({
     amount_in: CLValueBuilder.u256(
       new BigNumber(convertToNotes(params.amount_in).toString()).toFixed(0, BigNumber.ROUND_UP),

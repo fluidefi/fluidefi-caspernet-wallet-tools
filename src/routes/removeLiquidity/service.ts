@@ -127,7 +127,9 @@ const removeLiquidityCspr = async (
 
   const args = RuntimeArgs.fromMap({
     token: new CLKey(token),
-    liquidity: CLValueBuilder.u256(new BigNumber(params.liquidity).toFixed(0, BigNumber.ROUND_UP)),
+    liquidity: CLValueBuilder.u256(
+      new BigNumber(convertToNotes(params.liquidity).toString()).toFixed(0, BigNumber.ROUND_UP),
+    ),
     amount_cspr_min: CLValueBuilder.u256(
       new BigNumber(convertToNotes(amountCSPRDesired).toString())
         .times(1 - params.slippage)

@@ -11,13 +11,6 @@ import "reflect-metadata";
 import { initDb } from "./db";
 import { allowanceRouter } from "./routes/allowance";
 
-/**
- * 3: minutes
- * 60: 60 seconds for 1 minute
- * 1000: 1000 milliseconds for 1 second
- */
-const SERVER_TIMEOUT_MILLISECONDS = 3 * 60 * 1000;
-
 (async () => {
   await initDb();
 })();

@@ -22,6 +22,10 @@ import {
 } from "../../utils";
 import { AllowanceParams } from "./types";
 import { UserError } from "../../exceptions";
+import {
+  getLatestPairContractHashByPackageHash,
+  getLatestTokenContractHashByPackageHash,
+} from "../../utils/blockChainUtils";
 
 const config = {
   network_name: "casper-test",
@@ -31,52 +35,18 @@ const config = {
 
 const faucetKey = Keys.getKeysFromHexPrivKey(PRIVATE_KEY, Keys.SignatureAlgorithm.Ed25519);
 
-// this will be refactored once we update the DB
-const getContractHash = (tokenSymbol: string): string => {
-  const contracts = [
-    {
-      tokenSymbol: "WCSPR",
-      contractHash: "8b93e4847ad2628a57675141d206e93241475a9b814a4cf5a3ec0f20845fa6ec",
-    },
-    {
-      tokenSymbol: "USDC",
-      contractHash: "4abd547ff0bb3283005e216b6c0c043f877fba56c6565369c8ab36897507407e",
-    },
-    {
-      tokenSymbol: "DAI",
-      contractHash: "cddb79e2ae2ba3dcaa358fedc86a8d7bbdb5ba42748e698a6bd35b3c73ed3f3a",
-    },
-    {
-      tokenSymbol: "USDT",
-      contractHash: "f6b5b9ae6648b02b32b75baf945bce8b3dd1ae3604ebd80a05d7f9f1cfd725eb",
-    },
-    {
-      tokenSymbol: "WETH",
-      contractHash: "285b94254bbbfde92d2ec5c39ce2a67041ea9195f25ab16ba2664eb65cbd104d",
-    },
-    {
-      tokenSymbol: "CSX",
-      contractHash: "8bda755eb1aff73580e11f8fcb0c530a8486334d389cb98e55c541ef397672bd",
-    },
-    {
-      tokenSymbol: "CST",
-      contractHash: "40702409a78543f66dfcc34606db669faaa041b821b9319f460217ebf9885ac0",
-    },
-    {
-      tokenSymbol: "WBTC",
-      contractHash: "4fa60af6264f8eacaa4ee0f46dab671894f18cb3da069ea7663853ab1702e9d5",
-    },
-    {
-      tokenSymbol: "DWBTC",
-      contractHash: "27dcb2efc403047a3f9fdad8acf879e3630706c9a38d28b8ef44201b1581fb3e",
-    },
-  ];
+const getContractHash = async (casperService: CasperServiceByJsonRPC, tokenSymbol: string): Promise<string> => {
+  const tokenPackageHash = await getTokenPackageHash(tokenSymbol);
+  const latesetContractHash = await getLatestTokenContractHashByPackageHash(casperService, tokenPackageHash);
 
-  const el = contracts.find((el) => el.tokenSymbol == tokenSymbol);
-  return el ? el.contractHash : "";
+  return latesetContractHash.replace("contract-", "");
 };
 
-const getContractHashForPair = async (tokenA: string, tokenB: string): Promise<string> => {
+const getContractHashForPair = async (
+  casperService: CasperServiceByJsonRPC,
+  tokenA: string,
+  tokenB: string,
+): Promise<string> => {
   tokenA = tokenA == CsprTokenSymbol ? WCsprTokenSymbol : tokenA;
   tokenB = tokenB == CsprTokenSymbol ? WCsprTokenSymbol : tokenB;
   const [tokenAPackageHash, tokenBPackageHash] = await Promise.all([
@@ -84,17 +54,24 @@ const getContractHashForPair = async (tokenA: string, tokenB: string): Promise<s
     getTokenPackageHash(tokenB),
   ]);
 
-  const [pairContractHash, pairContractHashBis] = await Promise.all([
+  const [pairPackageContractHash, pairPackageContractHashBis] = await Promise.all([
     getPairContractAddress(tokenAPackageHash, tokenBPackageHash),
     getPairContractAddress(tokenBPackageHash, tokenAPackageHash),
   ]);
 
-  if (!pairContractHash && !pairContractHashBis) {
+  if (!pairPackageContractHash && !pairPackageContractHashBis) {
     throw { userError: true, msg: `Uknown pairs ${tokenA} - ${tokenB} || ${tokenB} - ${tokenA}` } as UserError;
-  } else if (pairContractHash) {
-    return pairContractHash;
+  } else if (pairPackageContractHash) {
+    const pairLastContractHash = await getLatestPairContractHashByPackageHash(casperService, pairPackageContractHash);
+
+    return pairLastContractHash.replace("contract-", "");
   } else {
-    return pairContractHashBis;
+    const pairLastContractHash = await getLatestPairContractHashByPackageHash(
+      casperService,
+      pairPackageContractHashBis,
+    );
+
+    return pairLastContractHash.replace("contract-", "");
   }
 };
 
@@ -107,9 +84,9 @@ export const signAndDeployAllowance = async (params: AllowanceParams): Promise<[
     const entryPoint = "increase_allowance";
     let tokenContractHash = "";
     if (!params.tokenB) {
-      tokenContractHash = getContractHash(params.token);
+      tokenContractHash = await getContractHash(casperService, params.token);
     } else {
-      tokenContractHash = await getContractHashForPair(params.token, params.tokenB);
+      tokenContractHash = await getContractHashForPair(casperService, params.token, params.tokenB);
     }
     const spender = config.router_package_hash;
     const spenderByteArray = new CLByteArray(Uint8Array.from(Buffer.from(spender, "hex")));

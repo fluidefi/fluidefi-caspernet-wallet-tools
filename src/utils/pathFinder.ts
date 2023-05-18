@@ -153,7 +153,7 @@ export class DijkstraCalculator {
         }
         break;
       }
-      if (smallest || distances[smallest.id] !== Infinity) {
+      if (smallest || distances[(smallest as Node).id] !== Infinity) {
         for (const neighbor in this.adjacencyList[smallest.id]) {
           //find neighboring node
           const nextNode = this.adjacencyList[smallest.id][neighbor];

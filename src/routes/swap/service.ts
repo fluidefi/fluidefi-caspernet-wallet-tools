@@ -47,7 +47,7 @@ const MAIN_PURSE = "uref-04edf1af554b36e7d734cca4181c70038ec979d70c56b96771520d8
  *
  * @returns which swap endpoint should be used
  */
-const selectSwapEntryPoint = (tokenASymbol: string, tokenBSymbol: string): SwapEntryPoint => {
+const selectSwapEntryPoint = (tokenASymbol: string, tokenBSymbol: string): SwapEntryPoint | "" => {
   if (tokenASymbol === CsprTokenSymbol && tokenBSymbol !== CsprTokenSymbol) {
     return SwapEntryPoint.SWAP_EXACT_CSPR_FOR_TOKENS;
   } else if (tokenASymbol !== CsprTokenSymbol && tokenBSymbol === CsprTokenSymbol) {
@@ -55,6 +55,7 @@ const selectSwapEntryPoint = (tokenASymbol: string, tokenBSymbol: string): SwapE
   } else if (tokenASymbol !== CsprTokenSymbol && tokenBSymbol !== CsprTokenSymbol) {
     return SwapEntryPoint.SWAP_EXACT_TOKENS_FOR_TOKENS;
   }
+  return "";
 };
 
 /**

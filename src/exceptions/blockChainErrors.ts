@@ -1,4 +1,8 @@
-export const ERROR_BLOCKCHAIN = {
+interface ErrorBlockchain {
+  [key: string]: { message: string };
+}
+
+export const ERROR_BLOCKCHAIN: ErrorBlockchain = {
   "Mint error: 0": {
     message: "Error: Insufficent CSPR for gas.",
   },

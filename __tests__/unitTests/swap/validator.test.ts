@@ -7,6 +7,10 @@ describe("postSwapValidator", () => {
     tokenA: "ETH",
     tokenB: "USDT",
     amount_in: 1,
+    amount_out: 0,
+    deadline: 0,
+    slippage: 0,
+    gasPrice: 0,
   };
 
   it("should return null for valid swap params", () => {
@@ -23,6 +27,11 @@ describe("postSwapValidator", () => {
       mode: SwapMode.exactInput,
       tokenA: "ETH",
       tokenB: "USDT",
+      amount_in: 0,
+      amount_out: 0,
+      deadline: 0,
+      slippage: 0,
+      gasPrice: 0,
     };
 
     expect(postSwapValidator(invalidSwapParams1)).toBe("error");
@@ -35,6 +44,10 @@ describe("postSwapValidator", () => {
       tokenA: "ETH",
       tokenB: "USDT",
       amount_in: 1,
+      amount_out: 0,
+      deadline: 0,
+      slippage: 0,
+      gasPrice: 0,
     };
 
     const validSwapParamsWithAmountOut: SwapPrams = {
@@ -42,6 +55,10 @@ describe("postSwapValidator", () => {
       tokenA: "ETH",
       tokenB: "USDT",
       amount_out: 1,
+      amount_in: 0,
+      deadline: 0,
+      slippage: 0,
+      gasPrice: 0,
     };
 
     expect(postSwapValidator(validSwapParamsWithAmountIn)).toBeNull();
@@ -53,6 +70,11 @@ describe("postSwapValidator", () => {
       mode: SwapMode.exactInput,
       tokenA: "ETH",
       tokenB: "USDT",
+      amount_in: 0,
+      amount_out: 0,
+      deadline: 0,
+      slippage: 0,
+      gasPrice: 0,
     };
 
     expect(postSwapValidator(invalidSwapParams)).toBe("error");

@@ -19,6 +19,7 @@ import {
   getPairContractAddress,
   getTokenPackageHash,
   signAndDeployContractCall,
+  waitForDeployExecution,
 } from "../../utils";
 import { AllowanceParams } from "./types";
 import { UserError } from "../../exceptions";
@@ -75,41 +76,36 @@ const getContractHashForPair = async (
   }
 };
 
-export const signAndDeployAllowance = async (params: AllowanceParams): Promise<[string, GetDeployResult]> => {
-  try {
-    const senderPublicKey = CLPublicKey.fromHex(PUBLIC_KEY);
-    const casperService = new CasperServiceByJsonRPC(CASPERNET_PROVIDER_URL);
-    const casperClient = new CasperClient(CASPERNET_PROVIDER_URL);
+export const signAndDeployAllowance = async (params: AllowanceParams): Promise<string> => {
+  const senderPublicKey = CLPublicKey.fromHex(PUBLIC_KEY);
+  const casperService = new CasperServiceByJsonRPC(CASPERNET_PROVIDER_URL);
+  const casperClient = new CasperClient(CASPERNET_PROVIDER_URL);
 
-    const entryPoint = "increase_allowance";
-    let tokenContractHash = "";
-    if (!params.tokenB) {
-      tokenContractHash = await getContractHash(casperService, params.token);
-    } else {
-      tokenContractHash = await getContractHashForPair(casperService, params.token, params.tokenB);
-    }
-    const spender = config.router_package_hash;
-    const spenderByteArray = new CLByteArray(Uint8Array.from(Buffer.from(spender, "hex")));
-    const args = RuntimeArgs.fromMap({
-      spender: new CLKey(spenderByteArray),
-      amount: CLValueBuilder.u256(new BigNumber(convertToNotes(params.amount).toString()).toFixed(0)),
-    });
-
-    const [deployHash, deployResult] = await signAndDeployContractCall(
-      casperClient,
-      casperService,
-      senderPublicKey,
-      faucetKey,
-      tokenContractHash,
-      entryPoint,
-      args,
-      new BigNumber(convertToNotes(params.gasPrice).toString() || 5000000000),
-      "casper-test",
-    );
-
-    return [deployHash, deployResult];
-  } catch (err) {
-    console.error(`signAndDeployAllowance error: ${err}`);
-    throw err;
+  const entryPoint = "increase_allowance";
+  let tokenContractHash = "";
+  if (!params.tokenB) {
+    tokenContractHash = await getContractHash(casperService, params.token);
+  } else {
+    tokenContractHash = await getContractHashForPair(casperService, params.token, params.tokenB);
   }
+  const spender = config.router_package_hash;
+  const spenderByteArray = new CLByteArray(Uint8Array.from(Buffer.from(spender, "hex")));
+  const args = RuntimeArgs.fromMap({
+    spender: new CLKey(spenderByteArray),
+    amount: CLValueBuilder.u256(new BigNumber(convertToNotes(params.amount).toString()).toFixed(0)),
+  });
+
+  const [deployHash, deployResult] = await signAndDeployContractCall(
+    casperClient,
+    casperService,
+    senderPublicKey,
+    faucetKey,
+    tokenContractHash,
+    entryPoint,
+    args,
+    new BigNumber(convertToNotes(params.gasPrice).toString() || 5000000000),
+    "casper-test",
+  );
+  await waitForDeployExecution(casperClient, deployHash);
+  return deployHash;
 };

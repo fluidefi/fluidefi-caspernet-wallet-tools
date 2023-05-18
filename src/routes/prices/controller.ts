@@ -8,6 +8,8 @@ export const getPricesController = async (req: Request, res: Response) => {
     const tokenPrices = await getPricesService();
     return sendOkResponse(res, { data: tokenPrices, msg: "" });
   } catch (err: any) {
+    console.log(err);
+
     if ("userError" in err && err.userError) {
       return sendBadRequestResponse(res, { msg: (err as UserError).msg });
     } else {

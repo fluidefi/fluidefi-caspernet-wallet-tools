@@ -13,11 +13,18 @@ export const allowance = async (req: Request, res: Response) => {
 
   const params = req.body as AllowanceParams;
   try {
-    const [deployHash, deployResult] = await signAndDeployAllowance(params);
+    const deployHash = await signAndDeployAllowance(params);
     return sendOkResponse(res, { msg: "", data: { deployHash } });
   } catch (err: any) {
-    if ("userError" in err && err.userError) {
-      return sendBadRequestResponse(res, { msg: (err as UserError).msg });
+    console.log(err);
+
+    if ("timeout" in err && err.timeout) {
+      return sendOkResponse(res, {
+        msg: (err as UserError).msg,
+        data: { deployHash: (err as UserError).deployHash, success: false },
+      });
+    } else if ("userError" in err && err.userError) {
+      return sendBadRequestResponse(res, { msg: (err as UserError).msg, deployHash: (err as UserError).deployHash });
     } else {
       return sendErrorResponse(res, err);
     }

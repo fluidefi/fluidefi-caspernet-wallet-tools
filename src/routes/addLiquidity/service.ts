@@ -22,6 +22,7 @@ import {
   getTokenPackageHash,
   signAndDeployContractCall,
   signAndDeployWasm,
+  waitForDeployExecution,
 } from "../../utils";
 import { UserError } from "../../exceptions";
 
@@ -164,7 +165,7 @@ const addLiquidity = async (
   );*/
 };
 
-export const AddLiquidityService = async (params: AddLiquidityParams): Promise<[string, GetDeployResult]> => {
+export const AddLiquidityService = async (params: AddLiquidityParams): Promise<string> => {
   const senderPublicKey = CLPublicKey.fromHex(PUBLIC_KEY);
 
   const casperService = new CasperServiceByJsonRPC(CASPERNET_PROVIDER_URL);
@@ -179,10 +180,11 @@ export const AddLiquidityService = async (params: AddLiquidityParams): Promise<[
   if (tokenAPackageHash == "" || tokenBPackageHash == "") {
     throw { userError: true, msg: "token not found" } as UserError;
   }
-
+  let deployHash: string;
+  let deployResult: GetDeployResult;
   switch (entryPoint) {
     case AddLiquidityEntryPoint.ADD_LIQUIDITY_CSPR:
-      const [deployHashCspr, deployResultCspr] = await addLiquiidityCspr(
+      [deployHash, deployResult] = await addLiquiidityCspr(
         client,
         casperService,
         params,
@@ -192,10 +194,9 @@ export const AddLiquidityService = async (params: AddLiquidityParams): Promise<[
         entryPoint,
       );
 
-      return [deployHashCspr, deployResultCspr];
       break;
     case AddLiquidityEntryPoint.ADD_LIQUIDITY:
-      const [deployHash, deployResult] = await addLiquidity(
+      [deployHash, deployResult] = await addLiquidity(
         client,
         casperService,
         params,
@@ -205,10 +206,11 @@ export const AddLiquidityService = async (params: AddLiquidityParams): Promise<[
         entryPoint,
       );
 
-      return [deployHash, deployResult];
       break;
     default:
       throw { userError: true, msg: "unknown add liquidity entrypoint" } as UserError;
       break;
   }
+  await waitForDeployExecution(client, deployHash);
+  return deployHash;
 };

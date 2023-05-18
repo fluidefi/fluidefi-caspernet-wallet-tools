@@ -11,6 +11,8 @@ import {
 import { sleep } from ".";
 import { readFileSync } from "fs";
 import { join } from "path";
+import { ERROR_BLOCKCHAIN } from "../exceptions/blockChainErrors";
+import { UserError } from "../exceptions";
 
 export const signAndDeployContractCall = async (
   client: CasperClient,
@@ -153,7 +155,7 @@ export const getDeploy = async (
 export const waitForDeployExecution = async (
   casperClient: CasperClient,
   deployHash: string,
-  ticks = 1000,
+  ticks = 90,
 ): Promise<[DeployUtil.Deploy, GetDeployResult]> => {
   let i = 0;
   while (i !== ticks) {
@@ -169,10 +171,13 @@ export const waitForDeployExecution = async (
         i++;
         await sleep(1000);
       }
-    } catch (e) {
+    } catch (e: any) {
+      if (ERROR_BLOCKCHAIN[`${e}`] != null) {
+        throw { userError: true, msg: ERROR_BLOCKCHAIN[`${e}`].message, deployHash } as UserError;
+      }
       i++;
       await sleep(1000);
     }
   }
-  throw Error("Timeout after " + i + "s. Something's wrong");
+  throw { timeout: true, msg: "Timeout after " + i + "s.", deployHash };
 };

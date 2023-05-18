@@ -12,7 +12,14 @@ import {
   Keys,
   RuntimeArgs,
 } from "casper-js-sdk";
-import { CsprTokenSymbol, WCsprTokenSymbol, convertToNotes, signAndDeployContractCall, signAndDeployWasm } from "../../utils";
+import {
+  CsprTokenSymbol,
+  WCsprTokenSymbol,
+  convertToNotes,
+  signAndDeployContractCall,
+  signAndDeployWasm,
+  waitForDeployExecution,
+} from "../../utils";
 import { RemoveLiquidityEntryPoint, RemoveLiquidityParams } from "./types";
 import { CASPERNET_PROVIDER_URL, PRIVATE_KEY, PUBLIC_KEY } from "../../config";
 import { UserError } from "../../exceptions";
@@ -164,7 +171,7 @@ const removeLiquidityCspr = async (
   );
 };
 
-export const removeLiquidityService = async (params: RemoveLiquidityParams): Promise<[string, GetDeployResult]> => {
+export const removeLiquidityService = async (params: RemoveLiquidityParams): Promise<string> => {
   const senderPublicKey = CLPublicKey.fromHex(PUBLIC_KEY);
 
   const casperService = new CasperServiceByJsonRPC(CASPERNET_PROVIDER_URL);
@@ -178,10 +185,12 @@ export const removeLiquidityService = async (params: RemoveLiquidityParams): Pro
   if (tokenAPackageHash == "" || tokenBPackageHash == "") {
     throw { userError: true, msg: "token not found" } as UserError;
   }
+  let deployHash: string;
+  let deployResult: GetDeployResult;
 
   switch (entryPoint) {
     case RemoveLiquidityEntryPoint.REMOVE_LIQUIDITY:
-      const [deployHash, deployResult] = await removeLiquidity(
+      [deployHash, deployResult] = await removeLiquidity(
         client,
         casperService,
         params,
@@ -191,10 +200,9 @@ export const removeLiquidityService = async (params: RemoveLiquidityParams): Pro
         entryPoint,
       );
 
-      return [deployHash, deployResult];
       break;
     case RemoveLiquidityEntryPoint.REMOVE_LIQUIDITY_CSPR:
-      const [deployHashCspr, deployResultCspr] = await removeLiquidityCspr(
+      [deployHash, deployResult] = await removeLiquidityCspr(
         client,
         casperService,
         params,
@@ -204,10 +212,11 @@ export const removeLiquidityService = async (params: RemoveLiquidityParams): Pro
         entryPoint,
       );
 
-      return [deployHashCspr, deployResultCspr];
       break;
     default:
       throw { userError: true, msg: "unknown remove liquidity entrypoint" } as UserError;
       break;
   }
+  await waitForDeployExecution(client, deployHash);
+  return deployHash;
 };

@@ -13,13 +13,18 @@ export const addLiquidity = async (req: Request, res: Response) => {
 
   const addLiquidityParams = req.body as AddLiquidityParams;
   try {
-    const [deployHash, deployResult] = await AddLiquidityService(addLiquidityParams);
+    const deployHash = await AddLiquidityService(addLiquidityParams);
     return sendOkResponse(res, { msg: "", data: { deployHash } });
   } catch (err: any) {
     console.log(err);
 
-    if ("userError" in err && err.userError) {
-      return sendBadRequestResponse(res, { msg: (err as UserError).msg });
+    if ("timeout" in err && err.timeout) {
+      return sendOkResponse(res, {
+        msg: (err as UserError).msg,
+        data: { deployHash: (err as UserError).deployHash, success: false },
+      });
+    } else if ("userError" in err && err.userError) {
+      return sendBadRequestResponse(res, { msg: (err as UserError).msg, deployHash: (err as UserError).deployHash });
     } else {
       return sendErrorResponse(res, err);
     }

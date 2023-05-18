@@ -22,6 +22,7 @@ import {
   getPath,
   signAndDeployContractCall,
   signAndDeployWasm,
+  waitForDeployExecution,
 } from "../../utils";
 import { AppDataSource } from "../../db";
 import { LiquidityPool, Token } from "../../entities";
@@ -248,7 +249,7 @@ const swapExactTokensForTokens = async (
   // );
 };
 
-export const swap = async (params: SwapPrams): Promise<[string, GetDeployResult]> => {
+export const swap = async (params: SwapPrams): Promise<string> => {
   const senderPublicKey = CLPublicKey.fromHex(PUBLIC_KEY);
 
   const casperService = new CasperServiceByJsonRPC(CASPERNET_PROVIDER_URL);
@@ -267,22 +268,24 @@ export const swap = async (params: SwapPrams): Promise<[string, GetDeployResult]
   switch (entryPoint) {
     case SwapEntryPoint.SWAP_EXACT_CSPR_FOR_TOKENS:
       [deployHash, deployResult] = await swapExactCsprForTokens(params, path, client, casperService, senderPublicKey);
-      return [deployHash, deployResult];
+
       break;
     case SwapEntryPoint.SWAP_EXACT_TOKENS_FOR_CSPR:
       [deployHash, deployResult] = await swapExactTokensForCspr(params, path, client, casperService, senderPublicKey);
-      return [deployHash, deployResult];
+
       break;
     case SwapEntryPoint.SWAP_TOKENS_FOR_EXACT_CSPR:
       [deployHash, deployResult] = await swapTokensForExactCspr(params, path, client, casperService, senderPublicKey);
-      return [deployHash, deployResult];
+
       break;
     case SwapEntryPoint.SWAP_EXACT_TOKENS_FOR_TOKENS:
       [deployHash, deployResult] = await swapExactTokensForTokens(params, path, client, casperService, senderPublicKey);
-      return [deployHash, deployResult];
+
       break;
     default:
       throw { userError: true, msg: "unknown swap entry point" } as UserError;
       break;
   }
+  await waitForDeployExecution(client, deployHash);
+  return deployHash;
 };

@@ -10,13 +10,21 @@ export const removeLiquidity = async (req: Request, res: Response) => {
   if (errors) {
     return sendBadRequestResponse(res, errors);
   }
+
   const removeLiquidityParams: RemoveLiquidityParams = req.body;
   try {
-    const [deployHash, deployResult] = await removeLiquidityService(removeLiquidityParams);
+    const deployHash = await removeLiquidityService(removeLiquidityParams);
     return sendOkResponse(res, { msg: "", data: { deployHash } });
   } catch (err: any) {
-    if ("userError" in err && err.userError) {
-      return sendBadRequestResponse(res, { msg: (err as UserError).msg });
+    console.log(err);
+
+    if ("timeout" in err && err.timeout) {
+      return sendOkResponse(res, {
+        msg: (err as UserError).msg,
+        data: { deployHash: (err as UserError).deployHash, success: false },
+      });
+    } else if ("userError" in err && err.userError) {
+      return sendBadRequestResponse(res, { msg: (err as UserError).msg, deployHash: (err as UserError).deployHash });
     } else {
       return sendErrorResponse(res, err);
     }

@@ -4,9 +4,10 @@
   "description": "Fluidefi Caspernet wallet tools",
   "main": "dist/index.js",
   "scripts": {
-    "build": "tsc",
+    "build": "tsc && npm run copy:wasm",
     "dev": "ts-node-dev --respawn --transpile-only src",
-    "start": "npm run build && node dist",
+    "copy:wasm": "cp src/utils/session-code-router.wasm  dist/src/utils",
+    "start": "npm run build && node dist/src",
     "test": "jest"
   },
   "repository": {

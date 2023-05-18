@@ -33,7 +33,6 @@ const config = {
 };
 
 const faucetKey = Keys.getKeysFromHexPrivKey(PRIVATE_KEY, Keys.SignatureAlgorithm.Ed25519);
-// const MAIN_PURSE = "uref-04edf1af554b36e7d734cca4181c70038ec979d70c56b96771520d82de1b8a6e-007";
 
 /**
  * Determine which add liquidity endpoint should be used

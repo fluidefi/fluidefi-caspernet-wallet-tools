@@ -21,7 +21,7 @@ import {
   waitForDeployExecution,
 } from "../../utils";
 import { RemoveLiquidityEntryPoint, RemoveLiquidityParams } from "./types";
-import { CASPERNET_PROVIDER_URL, PRIVATE_KEY, PUBLIC_KEY } from "../../config";
+import { CASPERNET_PROVIDER_URL, MAIN_PURSE, PRIVATE_KEY, PUBLIC_KEY } from "../../config";
 import { UserError } from "../../exceptions";
 import BigNumber from "bignumber.js";
 import { AppDataSource } from "../../db";
@@ -34,7 +34,6 @@ const config = {
 };
 
 const faucetKey = Keys.getKeysFromHexPrivKey(PRIVATE_KEY, Keys.SignatureAlgorithm.Ed25519);
-const MAIN_PURSE = "uref-04edf1af554b36e7d734cca4181c70038ec979d70c56b96771520d82de1b8a6e-007";
 
 export const selectRemoveLiquidityEntryPoint = (
   tokenASymbol: string,

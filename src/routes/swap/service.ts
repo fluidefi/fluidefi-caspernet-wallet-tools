@@ -13,7 +13,7 @@ import {
   CasperClient,
   GetDeployResult,
 } from "casper-js-sdk";
-import { PUBLIC_KEY, PRIVATE_KEY, CASPERNET_PROVIDER_URL } from "../../config";
+import { PUBLIC_KEY, PRIVATE_KEY, CASPERNET_PROVIDER_URL, MAIN_PURSE } from "../../config";
 import { PathResponse, SwapEntryPoint, SwapPrams } from "./types";
 import {
   CsprTokenSymbol,
@@ -37,7 +37,6 @@ const config = {
 };
 
 const faucetKey = Keys.getKeysFromHexPrivKey(PRIVATE_KEY, Keys.SignatureAlgorithm.Ed25519);
-const MAIN_PURSE = "uref-04edf1af554b36e7d734cca4181c70038ec979d70c56b96771520d82de1b8a6e-007";
 
 /**
  * Determine which swap endpoint should be used

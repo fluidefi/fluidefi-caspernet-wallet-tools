@@ -14,7 +14,7 @@ export const removeLiquidity = async (req: Request, res: Response) => {
   const removeLiquidityParams: RemoveLiquidityParams = req.body;
   try {
     const deployHash = await removeLiquidityService(removeLiquidityParams);
-    return sendOkResponse(res, { msg: "", data: { deployHash } });
+    return sendOkResponse(res, { msg: "", data: { deployHash, success: true } });
   } catch (err: any) {
     console.log(err);
 

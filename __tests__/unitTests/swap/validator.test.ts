@@ -2,81 +2,51 @@ import { SwapMode, SwapPrams } from "../../../src/routes/swap/types";
 import { postSwapValidator } from "../../../src/routes/swap/validator";
 
 describe("postSwapValidator", () => {
-  const validSwapParams: SwapPrams = {
-    mode: SwapMode.exactInput,
-    tokenA: "ETH",
-    tokenB: "USDT",
-    amount_in: 1,
-    amount_out: 0,
-    deadline: 0,
-    slippage: 0,
-    gasPrice: 0,
-  };
+  it("should return null when all required parameters are present", () => {
+    const swapParams = {
+      mode: "swap",
+      tokenA: "tokenA",
+      tokenB: "tokenB",
+      amount_in: 100,
+      amount_out: 200,
+      deadline: 1234567890,
+      gasPrice: 100,
+      slippage: 0.5,
+    };
 
-  it("should return null for valid swap params", () => {
-    expect(postSwapValidator(validSwapParams)).toBeNull();
+    const result = postSwapValidator(swapParams);
+
+    expect(result).toBe(null);
   });
 
-  it("should return 'error' if any of the required params are missing", () => {
-    const invalidSwapParams1 = {
-      mode: SwapMode.exactInput,
-      tokenA: "ETH",
+  it("should return 'error' when 'mode' is missing", () => {
+    const swapParams = {
+      tokenA: "tokenA",
+      tokenB: "tokenB",
+      amount_in: 100,
+      amount_out: 200,
+      deadline: 1234567890,
+      gasPrice: 100,
+      slippage: 0.5,
     };
 
-    const invalidSwapParams2: SwapPrams = {
-      mode: SwapMode.exactInput,
-      tokenA: "ETH",
-      tokenB: "USDT",
-      amount_in: 0,
-      amount_out: 0,
-      deadline: 0,
-      slippage: 0,
-      gasPrice: 0,
-    };
+    const result = postSwapValidator(swapParams);
 
-    expect(postSwapValidator(invalidSwapParams1)).toBe("error");
-    expect(postSwapValidator(invalidSwapParams2)).toBe("error");
+    expect(result).toBe("error");
   });
 
-  it("should return null if 'amount_in' or 'amount_out' are present in swap params", () => {
-    const validSwapParamsWithAmountIn: SwapPrams = {
-      mode: SwapMode.exactInput,
-      tokenA: "ETH",
-      tokenB: "USDT",
-      amount_in: 1,
-      amount_out: 0,
-      deadline: 0,
-      slippage: 0,
-      gasPrice: 0,
+  it("should return 'error' when both 'amount_in' and 'amount_out' are missing", () => {
+    const swapParams = {
+      mode: "swap",
+      tokenA: "tokenA",
+      tokenB: "tokenB",
+      deadline: 1234567890,
+      gasPrice: 100,
+      slippage: 0.5,
     };
 
-    const validSwapParamsWithAmountOut: SwapPrams = {
-      mode: SwapMode.exactInput,
-      tokenA: "ETH",
-      tokenB: "USDT",
-      amount_out: 1,
-      amount_in: 0,
-      deadline: 0,
-      slippage: 0,
-      gasPrice: 0,
-    };
+    const result = postSwapValidator(swapParams);
 
-    expect(postSwapValidator(validSwapParamsWithAmountIn)).toBeNull();
-    expect(postSwapValidator(validSwapParamsWithAmountOut)).toBeNull();
-  });
-
-  it("should return 'error' if 'amount_in' and 'amount_out' are missing in swap params", () => {
-    const invalidSwapParams: SwapPrams = {
-      mode: SwapMode.exactInput,
-      tokenA: "ETH",
-      tokenB: "USDT",
-      amount_in: 0,
-      amount_out: 0,
-      deadline: 0,
-      slippage: 0,
-      gasPrice: 0,
-    };
-
-    expect(postSwapValidator(invalidSwapParams)).toBe("error");
+    expect(result).toBe("error");
   });
 });

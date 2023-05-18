@@ -14,7 +14,7 @@ export const addLiquidity = async (req: Request, res: Response) => {
   const addLiquidityParams = req.body as AddLiquidityParams;
   try {
     const deployHash = await AddLiquidityService(addLiquidityParams);
-    return sendOkResponse(res, { msg: "", data: { deployHash } });
+    return sendOkResponse(res, { msg: "", data: { deployHash, success: true } });
   } catch (err: any) {
     console.log(err);
 

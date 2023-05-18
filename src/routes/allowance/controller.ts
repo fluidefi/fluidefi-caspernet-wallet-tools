@@ -14,7 +14,7 @@ export const allowance = async (req: Request, res: Response) => {
   const params = req.body as AllowanceParams;
   try {
     const deployHash = await signAndDeployAllowance(params);
-    return sendOkResponse(res, { msg: "", data: { deployHash } });
+    return sendOkResponse(res, { msg: "", data: { deployHash, success: true } });
   } catch (err: any) {
     console.log(err);
 

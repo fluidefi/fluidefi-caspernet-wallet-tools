@@ -6,10 +6,9 @@ import morgan from "morgan";
 import cookies from "cookie-parser";
 import { AccessControlAllowOrigin, PORT } from "./config";
 import { errorMiddleware } from "./middlewares";
-import { addLiquidityRouter, pricesRouter, removeLiquidityRouter, swapRouter } from "./routes";
+import { addLiquidityRouter, pricesRouter, removeLiquidityRouter, swapRouter, allowanceRouter } from "./routes";
 import "reflect-metadata";
 import { initDb } from "./db";
-import { allowanceRouter } from "./routes/allowance";
 
 (async () => {
   await initDb();

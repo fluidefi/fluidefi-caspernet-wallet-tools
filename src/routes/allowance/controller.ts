@@ -1,19 +1,19 @@
 import { Request, Response } from "express";
-import { postRemoveLiquidityValidator } from "./validator";
+import { signAndDeployAllowance } from "./service";
+import { AllowanceParams } from "./types";
+import { increaseAllowanceValidator } from "./validator";
 import { sendBadRequestResponse, sendErrorResponse, sendOkResponse } from "../../utils";
-import { RemoveLiquidityParams } from "./types";
-import { removeLiquidityService } from "./service";
 import { UserError } from "../../exceptions";
 
-export const removeLiquidity = async (req: Request, res: Response) => {
-  const errors = postRemoveLiquidityValidator(req.body);
+export const allowance = async (req: Request, res: Response) => {
+  const errors = increaseAllowanceValidator(req.body);
   if (errors) {
     return sendBadRequestResponse(res, errors);
   }
 
-  const removeLiquidityParams: RemoveLiquidityParams = req.body;
+  const params = req.body as AllowanceParams;
   try {
-    const deployHash = await removeLiquidityService(removeLiquidityParams);
+    const deployHash = await signAndDeployAllowance(params);
     return sendOkResponse(res, { msg: "", data: { deployHash, success: true } });
   } catch (err: any) {
     console.log(err);

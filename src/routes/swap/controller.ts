@@ -13,11 +13,18 @@ export const swapToknes = async (req: Request, res: Response) => {
 
   const swapParams = req.body as SwapPrams;
   try {
-    const [deployHash, deployResult] = await swap(swapParams);
-    return sendOkResponse(res, { msg: "", data: { deployHash } });
+    const deployHash = await swap(swapParams);
+    return sendOkResponse(res, { msg: "", data: { deployHash, success: true } });
   } catch (err: any) {
-    if ("userError" in err && err.userError) {
-      return sendBadRequestResponse(res, { msg: (err as UserError).msg });
+    console.log(err);
+
+    if ("timeout" in err && err.timeout) {
+      return sendOkResponse(res, {
+        msg: (err as UserError).msg,
+        data: { deployHash: (err as UserError).deployHash, success: false },
+      });
+    } else if ("userError" in err && err.userError) {
+      return sendBadRequestResponse(res, { msg: (err as UserError).msg, deployHash: (err as UserError).deployHash });
     } else {
       return sendErrorResponse(res, err);
     }

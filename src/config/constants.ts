@@ -6,6 +6,7 @@ export const AccessControlAllowOrigin = process.env.AccessControlAllowOrigin || 
 export const CASPERNET_PROVIDER_URL: string = process.env.CASPERNET_PROVIDER_URL || "http://85.114.132.133:7777/rpc";
 export const PRIVATE_KEY: string = process.env.PRIVATE_KEY || "";
 export const PUBLIC_KEY: string = process.env.PUBLIC_KEY || "";
+export const MAIN_PURSE: string = process.env.MAIN_PURSE || "";
 
 export const DBCreds: IDBCreds = {
   host: process.env.PHZ_FLDF_READ_DB_CONNECTION_HOST || "localhost",

@@ -6,7 +6,7 @@ import morgan from "morgan";
 import cookies from "cookie-parser";
 import { AccessControlAllowOrigin, PORT } from "./config";
 import { errorMiddleware } from "./middlewares";
-import { addLiquidityRouter, removeLiquidityRouter, swapRouter } from "./routes";
+import { addLiquidityRouter, pricesRouter, removeLiquidityRouter, swapRouter, allowanceRouter } from "./routes";
 import "reflect-metadata";
 import { initDb } from "./db";
 
@@ -29,6 +29,8 @@ app.use(morgan("tiny"));
 app.use("/swap", swapRouter);
 app.use("/add_liquidity", addLiquidityRouter);
 app.use("/remove_liquidity", removeLiquidityRouter);
+app.use("/allowance", allowanceRouter);
+app.use("/prices", pricesRouter);
 
 //Don't remove any of these unless you have to
 app.get("/version", (req, res) => res.send(process.env["npm_package_version"]));
@@ -36,6 +38,7 @@ app.use("/healthcheck", (req, res) => res.sendStatus(200)); // This is used for 
 app.use(/^\/$/, (req, res) => res.sendStatus(200)); // This is used for health check on load balancer to run task correctly
 app.use("*", (req, res) => res.status(404).send({ msg: "Undefined" }));
 app.use(errorMiddleware);
+
 app.listen(PORT, () => {
   console.log(`Server is running at port ${PORT}`);
 });

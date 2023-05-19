@@ -12,14 +12,20 @@ import {
   Keys,
   RuntimeArgs,
 } from "casper-js-sdk";
-import { CsprTokenSymbol, WCsprTokenSymbol, signAndDeployContractCall, signAndDeployWasm } from "../../utils";
+import {
+  CsprTokenSymbol,
+  WCsprTokenSymbol,
+  convertToNotes,
+  signAndDeployContractCall,
+  signAndDeployWasm,
+  waitForDeployExecution,
+} from "../../utils";
 import { RemoveLiquidityEntryPoint, RemoveLiquidityParams } from "./types";
-import { CASPERNET_PROVIDER_URL, PRIVATE_KEY, PUBLIC_KEY } from "../../config";
+import { CASPERNET_PROVIDER_URL, MAIN_PURSE, PRIVATE_KEY, PUBLIC_KEY } from "../../config";
 import { UserError } from "../../exceptions";
 import BigNumber from "bignumber.js";
 import { AppDataSource } from "../../db";
 import { Token } from "../../entities";
-import { signAndDeployAllowance } from "../../utils/allowance";
 
 const config = {
   network_name: "casper-test",
@@ -28,7 +34,6 @@ const config = {
 };
 
 const faucetKey = Keys.getKeysFromHexPrivKey(PRIVATE_KEY, Keys.SignatureAlgorithm.Ed25519);
-const MAIN_PURSE = "uref-04edf1af554b36e7d734cca4181c70038ec979d70c56b96771520d82de1b8a6e-007";
 
 export const selectRemoveLiquidityEntryPoint = (
   tokenASymbol: string,
@@ -71,22 +76,25 @@ const removeLiquidity = async (
 ): Promise<[string, GetDeployResult]> => {
   const tokenAContract = new CLByteArray(Uint8Array.from(Buffer.from(tokenAPackageHash, "hex")));
   const tokenBContract = new CLByteArray(Uint8Array.from(Buffer.from(tokenBPackageHash, "hex")));
-  await Promise.all([
-    signAndDeployAllowance(client, casperService, params.tokenA, new BigNumber(params.liquidity)),
-    signAndDeployAllowance(client, casperService, params.tokenB, new BigNumber(params.liquidity)),
-  ]);
+
   const args = RuntimeArgs.fromMap({
     token_a: new CLKey(tokenAContract),
     token_b: new CLKey(tokenBContract),
-    liquidity: CLValueBuilder.u256(new BigNumber(params.liquidity).toFixed(0, BigNumber.ROUND_UP)),
+    liquidity: CLValueBuilder.u256(
+      new BigNumber(convertToNotes(params.liquidity).toString()).toFixed(0, BigNumber.ROUND_UP),
+    ),
     amount_a_min: CLValueBuilder.u256(
-      new BigNumber(params.amount_a).times(1 - (params.slippage || 0.5)).toFixed(0, BigNumber.ROUND_DOWN),
+      new BigNumber(convertToNotes(params.amount_a).toString())
+        .times(1 - params.slippage)
+        .toFixed(0, BigNumber.ROUND_DOWN),
     ),
     amount_b_min: CLValueBuilder.u256(
-      new BigNumber(params.amount_b).times(1 - (params.slippage || 0.5)).toFixed(0, BigNumber.ROUND_DOWN),
+      new BigNumber(convertToNotes(params.amount_b).toString())
+        .times(1 - params.slippage)
+        .toFixed(0, BigNumber.ROUND_DOWN),
     ),
     to: new CLKey(new CLAccountHash((senderPublicKey as CLPublicKey).toAccountHash())),
-    deadline: CLValueBuilder.u256(new BigNumber(params.deadline || 2).toFixed(0)),
+    deadline: CLValueBuilder.u256(new BigNumber(params.deadline).toFixed(0)),
 
     // Deploy params
     entrypoint: CLValueBuilder.string(entryPoint),
@@ -101,7 +109,7 @@ const removeLiquidity = async (
     config.auction_manager_contract_hash,
     entryPoint,
     args,
-    new BigNumber(params.gasPrice || 1),
+    new BigNumber(convertToNotes(params.gasPrice).toString()),
     params.network || "casper-test",
   );
 };
@@ -115,8 +123,6 @@ const removeLiquidityCspr = async (
   senderPublicKey: CLPublicKey,
   entryPoint: RemoveLiquidityEntryPoint,
 ): Promise<[string, GetDeployResult]> => {
-  const allowaneToken = params.tokenA === CsprTokenSymbol ? params.tokenB : params.tokenA;
-  await signAndDeployAllowance(client, casperService, allowaneToken, new BigNumber(params.liquidity));
   const token =
     params.tokenA === CsprTokenSymbol || params.tokenA === WCsprTokenSymbol
       ? new CLByteArray(Uint8Array.from(Buffer.from(tokenBPackageHash, "hex")))
@@ -127,15 +133,21 @@ const removeLiquidityCspr = async (
 
   const args = RuntimeArgs.fromMap({
     token: new CLKey(token),
-    liquidity: CLValueBuilder.u256(new BigNumber(params.liquidity).toFixed(0, BigNumber.ROUND_UP)),
+    liquidity: CLValueBuilder.u256(
+      new BigNumber(convertToNotes(params.liquidity).toString()).toFixed(0, BigNumber.ROUND_UP),
+    ),
     amount_cspr_min: CLValueBuilder.u256(
-      new BigNumber(amountCSPRDesired).times(1 - (params.slippage || 1)).toFixed(0, BigNumber.ROUND_DOWN),
+      new BigNumber(convertToNotes(amountCSPRDesired).toString())
+        .times(1 - params.slippage)
+        .toFixed(0, BigNumber.ROUND_DOWN),
     ),
     amount_token_min: CLValueBuilder.u256(
-      new BigNumber(amountTokenDesired).times(1 - (params.slippage || 1)).toFixed(0, BigNumber.ROUND_DOWN),
+      new BigNumber(convertToNotes(amountTokenDesired).toString())
+        .times(1 - params.slippage)
+        .toFixed(0, BigNumber.ROUND_DOWN),
     ),
     to: new CLKey(new CLAccountHash((senderPublicKey as CLPublicKey).toAccountHash())),
-    deadline: CLValueBuilder.u256(new BigNumber(params.deadline || 1).toFixed(0)),
+    deadline: CLValueBuilder.u256(new BigNumber(params.deadline).toFixed(0)),
     to_purse: CLValueBuilder.uref(
       Uint8Array.from(Buffer.from(MAIN_PURSE.slice(5, 69), "hex")),
       AccessRights.READ_ADD_WRITE,
@@ -153,12 +165,12 @@ const removeLiquidityCspr = async (
     senderPublicKey,
     faucetKey,
     args,
-    new BigNumber(params.gasPrice || 1),
+    new BigNumber(convertToNotes(params.gasPrice).toString()),
     params.network || "casper-test",
   );
 };
 
-export const removeLiquidityService = async (params: RemoveLiquidityParams): Promise<[string, GetDeployResult]> => {
+export const removeLiquidityService = async (params: RemoveLiquidityParams): Promise<string> => {
   const senderPublicKey = CLPublicKey.fromHex(PUBLIC_KEY);
 
   const casperService = new CasperServiceByJsonRPC(CASPERNET_PROVIDER_URL);
@@ -172,10 +184,12 @@ export const removeLiquidityService = async (params: RemoveLiquidityParams): Pro
   if (tokenAPackageHash == "" || tokenBPackageHash == "") {
     throw { userError: true, msg: "token not found" } as UserError;
   }
+  let deployHash: string;
+  let deployResult: GetDeployResult;
 
   switch (entryPoint) {
     case RemoveLiquidityEntryPoint.REMOVE_LIQUIDITY:
-      const [deployHash, deployResult] = await removeLiquidity(
+      [deployHash, deployResult] = await removeLiquidity(
         client,
         casperService,
         params,
@@ -185,10 +199,9 @@ export const removeLiquidityService = async (params: RemoveLiquidityParams): Pro
         entryPoint,
       );
 
-      return [deployHash, deployResult];
       break;
     case RemoveLiquidityEntryPoint.REMOVE_LIQUIDITY_CSPR:
-      const [deployHashCspr, deployResultCspr] = await removeLiquidityCspr(
+      [deployHash, deployResult] = await removeLiquidityCspr(
         client,
         casperService,
         params,
@@ -198,10 +211,11 @@ export const removeLiquidityService = async (params: RemoveLiquidityParams): Pro
         entryPoint,
       );
 
-      return [deployHashCspr, deployResultCspr];
       break;
     default:
       throw { userError: true, msg: "unknown remove liquidity entrypoint" } as UserError;
       break;
   }
+  await waitForDeployExecution(client, deployHash);
+  return deployHash;
 };
